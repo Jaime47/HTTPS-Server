@@ -26,36 +26,3 @@ int server_ini(socklen_t * addrlen){
     return sockvalue;
 }
 
-void accept_connection (int sockval){
-    int desc;
-    struct sockaddr Link;
-    socklen_t len;
-    
-    len = sizeof(Link);
-
-    if(desc = accept(sockval,&Link,&len) <0){
-        exit(EXIT_FAILURE);
-    }
-
-    launch_service(desc);
-    //wait();
-    return;
-}
-
-void launch_service(int connval){
-    int pid;
-    long type, aux;
-    pid = fork();
-    if(pid < 0) exit (EXIT_FAILURE);
-    if (pid == 0) return;
-
-    syslog (LOG_INFO, "New access");
-    recv(connval, &aux, sizeof(long), 0);
-    type = ntohl(aux);
-
-
-    //database_access(connval, type, NULL);
-    close(connval);
-    syslog (LOG_INFO, "Exiting service");
-    exit(EXIT_SUCCESS);
-}

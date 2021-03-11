@@ -14,13 +14,13 @@
 #include <syslog.h>
 
 //Funcion de encapsulamiento (utlizando sys/socket.h)
-int socket(int family, int type, int protocol);
+//int socket(int family, int type, int protocol);
 //Funcion de encapsulamiento (utlizando sys/socket.h)
 int bind(int socket, struct sockaddr * localaddr, int addrlen);
 //Funcion de encapsulamiento (utlizando sys/socket.h)
-int listen(int socket, int queue_size);
+//int listen(int socket, int queue_size);
 //Funcion de encapsulamiento (utlizando sys/socket.h)
-//int accept( int socket, struct sockaddr * foreignaddr, int addrlen);
+int accept( int socket, struct sockaddr * foreignaddr, int addrlen);
 //Funcion de encapsulamiento (utlizando sys/socket.h)
 int connect(int sockfd, struct sockaddr * foreignaddrr, int addrlen);
 //Funcion de encapsulamiento (utlizando sys/socket.h)
@@ -43,19 +43,15 @@ int read(int fd, void *buf, size_t count);
  * Retorno:
  **/
 int server_ini(socklen_t * addrlen);
+
 /**
- * Funcion: accept_connection : Acepta una peticion de conexion al server
+ * Funcion: process_request : Recibe un descriptor de fichero y procesa el mensaje en el servidor
  * Argumentos:
- * sockval: Identificador de un socket
+ *  connfd: Descriptor de fichero 
  * Retorno:
+ * 
  **/
-void accept_connection (int sockval);
-/**
- * Funcion: launch_service: Una vez que se acepta una conexion, se lanza para recibir el mensaje en el servidor
- * Argumentos:
- * connval: Retorno de la funcion accept (accept_connection)
- * Retorno:
- **/
-void launch_service(int connval);
+
+void process_request(int connfd);
 
 #endif
