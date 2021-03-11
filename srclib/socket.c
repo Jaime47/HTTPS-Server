@@ -1,7 +1,7 @@
 
 #include "socket.h"
 
-//MODIFICACION NECESARIA
+
 int server_ini(socklen_t * addrlen){
 
     int sockvalue;
@@ -20,6 +20,10 @@ int server_ini(socklen_t * addrlen){
 
 
     if(bind(sockvalue, (struct sockaddr *)&Dir, sizeof(Dir) < 0)){
+        exit(EXIT_FAILURE);
+    }
+
+    if(listen(sockvalue, NULL) < 0){
         exit(EXIT_FAILURE);
     }
 

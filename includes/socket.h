@@ -13,13 +13,17 @@
 #include <unistd.h>
 #include <syslog.h>
 
+// LAS SIGUIENTES TRES FUNCIONES ESTAN ENCAPSULADAS EN LA FUNCION server_ini
+
 //Funcion de encapsulamiento (utlizando sys/socket.h)
 //int socket(int family, int type, int protocol);
 //Funcion de encapsulamiento (utlizando sys/socket.h)
-int bind(int socket, struct sockaddr * localaddr, int addrlen);
+//int bind(int socket, struct sockaddr * localaddr, int addrlen);
 //Funcion de encapsulamiento (utlizando sys/socket.h)
 //int listen(int socket, int queue_size);
 //Funcion de encapsulamiento (utlizando sys/socket.h)
+
+
 int accept( int socket, struct sockaddr * foreignaddr, int addrlen);
 //Funcion de encapsulamiento (utlizando sys/socket.h)
 int connect(int sockfd, struct sockaddr * foreignaddrr, int addrlen);
@@ -39,7 +43,7 @@ int read(int fd, void *buf, size_t count);
 /**
  * Funcion: server_ini : Inicializa un servidor asignandole socket y comenzando el proceso de recepcion
  * Argumentos:
- * 
+ * addrlen: Puntero que registra el tamaño de la direccion del socket, se usa en el main.
  * Retorno:
  **/
 int server_ini(socklen_t * addrlen);
@@ -51,7 +55,6 @@ int server_ini(socklen_t * addrlen);
  * Retorno:
  * 
  **/
-
 void process_request(int connfd);
 
 #endif
