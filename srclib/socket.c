@@ -1,19 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <strings.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <syslog.h>
 
-
-
-
+#include "socket.h"
 
 //MODIFICACION NECESARIA
-int server_ini(){
+int server_ini(socklen_t * addrlen){
 
     int sockvalue;
     struct sockaddr_in Dir;
@@ -26,6 +15,8 @@ int server_ini(){
     //Dir.sin_port = htons(NFC_SERVER_PORT);
     Dir.sin_addr.s_addr = htonl(INADDR_ANY);
     bzero((void*)&(Dir.sin_zero), 8);
+
+    *addrlen = sizeof(Dir.sin_addr);
 
 
     if(bind(sockvalue, (struct sockaddr *)&Dir, sizeof(Dir) < 0)){

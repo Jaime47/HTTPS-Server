@@ -16,7 +16,7 @@ void child_main(int i, int listenfd, int addrlen){
     while(1){
             clilen = addrlen;
             my_lock_wait();
-            connfd = accept(listenfd,  ,&clilen);
+            connfd = accept(listenfd,NULL ,NULL);
             my_lock_release();
 
             process_request(connfd);
@@ -26,10 +26,6 @@ void child_main(int i, int listenfd, int addrlen){
 }
 
 
-
-
-
-
 int main(int argc, char *argv)
 {
 
@@ -37,7 +33,8 @@ int listenfd, i, childpid;
 socklen_t addrlen;
 int nchildren = 50;
 
-listenfd = server_ini(argv[1], argv[2], &addrlen);
+//listenfd = server_ini(argv[1], argv[2], &addrlen);
+listenfd = server_ini(&addrlen);
 
 my_lock_init(NULL);
 

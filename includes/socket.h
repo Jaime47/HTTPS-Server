@@ -2,7 +2,17 @@
 
 #define _socket
 
-#include "stdio.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <strings.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <syslog.h>
+
 //Funcion de encapsulamiento (utlizando sys/socket.h)
 int socket(int family, int type, int protocol);
 //Funcion de encapsulamiento (utlizando sys/socket.h)
@@ -32,7 +42,7 @@ int read(int fd, void *buf, size_t count);
  * 
  * Retorno:
  **/
-int server_ini();
+int server_ini(socklen_t * addrlen);
 /**
  * Funcion: accept_connection : Acepta una peticion de conexion al server
  * Argumentos:
@@ -48,4 +58,4 @@ void accept_connection (int sockval);
  **/
 void launch_service(int connval);
 
-#include "socket.c"
+#endif
