@@ -1,13 +1,11 @@
 from socket import *;
 
+serverName = "clienTest"
 serverPort = 12000
-serverSocket = socket(AF_INET, SOCK_STREAM)
-serverSocket.bind(('myServer', serverPort))
-serverSocket.listen(1)
-print ('Servidor preparado para recibir')
-while 1:
-    connectionSocket, addr = serverSocket.accept()
-    sentence = connectionSocket.recv(1024)
-    capitalizedSentence = sentence.upper()
-    connectionSocket.send(capitalizedSentence)
-    connectionSocket.close()
+clientSocket = socket(AF_INET, SOCK_STREAM)
+clientSocket.connect((serverName,serverPort))
+sentence = input('Esto es un super mensaje de prueba')
+for _ in range(5000):
+    clientSocket.send(sentence)
+    modSentence = clientSocket.recv(1024)
+clientSocket.close()
