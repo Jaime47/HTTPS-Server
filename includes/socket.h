@@ -1,7 +1,7 @@
 #ifndef _socket
 
 #define _socket
-
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,9 +9,11 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <strings.h>
+#include <string.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <confuse.h>
 
 // LAS SIGUIENTES TRES FUNCIONES ESTAN ENCAPSULADAS EN LA FUNCION server_ini
 
@@ -56,5 +58,13 @@ int server_ini(socklen_t * addrlen);
  * 
  **/
 void process_request(int connfd);
+
+/**
+ * Funcion: conf_parser : Lee el archivo de configuracion y parsea sus elementos clave-valor
+ * Argumentos:
+ * Retorno:
+ **/
+
+void conf_parser();
 
 #endif
