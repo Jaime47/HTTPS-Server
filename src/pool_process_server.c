@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <syslog.h>
-#include <confuse.h>
+#include "socket.h"
 
 
 cfg_t * conf_parser(){
@@ -51,10 +51,15 @@ int main(int argc, char *argv)
 
 int listenfd, i, childpid;
 socklen_t addrlen;
-int nchildren = 50;
+cfg_t * conf;
+int nchildren;
+
+conf = conf_parser();
+
+nchildren = cfg_getint(conf, "nchildren");
 
 //listenfd = server_ini(argv[1], argv[2], &addrlen);
-listenfd = server_ini(&addrlen);
+listenfd = server_ini(&addrlen, conf);
 
 my_lock_init(NULL);
 

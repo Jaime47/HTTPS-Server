@@ -48,7 +48,7 @@ int read(int fd, void *buf, size_t count);
  * addrlen: Puntero que registra el tamaño de la direccion del socket, se usa en el main.
  * Retorno:
  **/
-int server_ini(socklen_t * addrlen);
+int server_ini(socklen_t * addrlen, cfg_t * conf);
 
 /**
  * Funcion: process_request : Recibe un descriptor de fichero y procesa el mensaje en el servidor

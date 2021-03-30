@@ -2,7 +2,7 @@
 #include "socket.h"
 
 
-int server_ini(socklen_t * addrlen){
+int server_ini(socklen_t * addrlen, cfg_t * conf){
 
     int sockvalue;
     struct sockaddr_in Dir;
@@ -12,7 +12,7 @@ int server_ini(socklen_t * addrlen){
     }
 
     Dir.sin_family = AF_INET;
-    //Dir.sin_port = htons(NFC_SERVER_PORT);
+    Dir.sin_port = cfg_getstr(conf, "listen_port");
     Dir.sin_addr.s_addr = htonl(INADDR_ANY);
     bzero((void*)&(Dir.sin_zero), 8);
 
@@ -30,19 +30,20 @@ int server_ini(socklen_t * addrlen){
     return sockvalue;
 }
 
-void conf_parser(){
-    static char * server_root = NULL;
-    static char * server_signature = NULL;    
-    static long int max_clients;
-    static long int listen_port;
-    cfg_opt_t opts[] = {
-        CFG_SIMPLE_STR("server_root", &server_root),
-        CFG_SIMPLE_INT("max_clients", &max_clients),
-        CFG_SIMPLE_INT("listen_port", &listen_port),
-        CFG_SIMPLE_STR("server_signature", &server_signature),
-        CFG_END()
-    };
-    cfg_t *cfg;
-    cfg_init(opts, 0);
-    cfg_parse(cfg, "server.conf");
+void process_request(int connfd){
+    char * buffer[3000];
+    int read_control;
+    //Leemos el mensaje que tiene el cliente.
+    read_control = recv(connfd, buffer, 3000, 0);
+    if (read_control == 0){
+        // Desconectado
+        fflush(stdout);
+        return;
+    }
+    else if(read_control == -1){
+        //Error
+        perror("Failed recv");
+    }
+
+    // Ahora hay que parsear y llamar a la funcion que corresponda para responder
 }

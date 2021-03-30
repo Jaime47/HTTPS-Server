@@ -2,6 +2,10 @@
     "files.associations": {
         "mman.h": "c",
         "fcntl.h": "c",
-        "syslog.h": "c"
+        "syslog.h": "c",
+        "confuse.h": "c",
+        "socket.h": "c",
+        "strings.h": "c",
+        "inet.h": "c"
     }
 }
