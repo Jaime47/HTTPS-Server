@@ -1,6 +1,9 @@
 
 #include "socket.h"
 
+/* ---- Defines ---- */
+#define ARG_ERROR "ERROR(%s): Los argumentos de la funcion son erroneos\n"
+#define METHOD_ERROR "ERROR(%d): Metodo \"%s\" no soportado\n"
 
 int server_ini(socklen_t * addrlen, cfg_t * conf){
 
@@ -30,9 +33,13 @@ int server_ini(socklen_t * addrlen, cfg_t * conf){
     return sockvalue;
 }
 
-void process_request(int connfd){
+void process_request(int connfd, cfg_t * conf){
     char * buffer[3000];
-    int read_control;
+    int read_control, resultado;
+    const int iguales = 0;
+    char * server_name;
+    char * server_root;
+
     //Leemos el mensaje que tiene el cliente.
     read_control = recv(connfd, buffer, 3000, 0);
     if (read_control == 0){
@@ -45,5 +52,42 @@ void process_request(int connfd){
         perror("Failed recv");
     }
 
-    // Ahora hay que parsear y llamar a la funcion que corresponda para responder
+    /**
+     * PARSEO DE LA PETICION;
+     * IMPORTANTE Para que el codigo sea compacto los campos del parseo deben ir en una estructura, lista, o similar
+     **/
+    
+    /**
+     * EJECUCIÓN DE LA PETICION 
+     **/
+    server_name = cfg_getstr(conf,"server_signature");
+    server_root = cfg_getstr(conf,"server_root");
+    /* Comprobamos que el metodo de la peticion sea valido */
+	if (strcmp(metodo, "GET") == iguales) {
+		resultado = GET(); /* TODO Procesar GET */
+	} else if (strcmp(metodo, "POST") == iguales) {
+		resultado = POST(); /* TODO Procesar POST */
+	} else if (strcmp(metodo, "OPTIONS") == iguales) {
+		resultado = OPTIONS(,server_name,server_root,connfd); /* TODO Procesar OPTIONS */
+	} else {
+		fprintf(stderr, METHOD_ERROR, __func__, metodo);
+		resultado = 400;
+	}
+
+
+
+    /* En caso de error, enviar mensaje al cliente */
+	if (resultado==301) { /* Moved Permanently */
+		/* Enviar mensaje */
+		/* Liberar memoria */
+	} else if (resultado==400) { /* Bad Request */
+		/* Enviar mensaje */
+		/* Liberar memoria */
+	} else if (resultado==404) { /* Not Found */
+		/* Enviar mensaje */
+		/* Liberar memoria */
+	} else if (resultado==505) { /* HTTP Version Not Supported */
+		/* Enviar mensaje */
+		/* Liberar memoria */
+	}
 }

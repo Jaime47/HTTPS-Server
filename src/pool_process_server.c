@@ -30,7 +30,7 @@ cfg_t * conf_parser(){
 
 
 
-void child_main(int i, int listenfd, int addrlen){
+void child_main(int i, int listenfd, int addrlen, cfg_t * conf){
     int clilen, connfd;
     
     while(1){
@@ -39,7 +39,7 @@ void child_main(int i, int listenfd, int addrlen){
             connfd = accept(listenfd,NULL ,NULL);
             my_lock_release();
 
-            process_request(connfd);
+            process_request(connfd, conf);
             close(connfd);
             
     }
@@ -67,7 +67,7 @@ for(i = 0; i < nchildren; i++)
     {
 
         if((childpid = fork()) == 0){
-            child_main(i, listenfd,addrlen);
+            child_main(i, listenfd,addrlen,conf);
         }
 
     }
