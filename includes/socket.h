@@ -35,12 +35,16 @@ int close(int socket);
 int send(int socket, void *buf, size_t len, int flags);
 //Funcion de encapsulamiento (utlizando sys/socket.h)
 int read(int fd, void *buf, size_t count);
+
 /**
- * Funcion: httpParser : Ajusta una cadena de texto para ser procesada por el servidor
- * Argumentos:
- * 
- * Retorno:
-**/
+  * @brief Parsea una cadena de texto para ser procesada por el servidor.
+  * Inicializa la estructura HttpPetition.
+  *
+  * @param petition_message Puntero al mensaje con la peticion http del cliente
+  *
+  * @return estructura en caso de exito, NULL en caso de error
+  */
+HttpPetition *http_parser(char *petition_message);
 
 /**
  * Funcion: server_ini : Inicializa un servidor asignandole socket y comenzando el proceso de recepcion
@@ -53,9 +57,9 @@ int server_ini(socklen_t * addrlen, cfg_t * conf);
 /**
  * Funcion: process_request : Recibe un descriptor de fichero y procesa el mensaje en el servidor
  * Argumentos:
- *  connfd: Descriptor de fichero 
+ *  connfd: Descriptor de fichero
  * Retorno:
- * 
+ *
  **/
 void process_request(int connfd);
 
