@@ -116,7 +116,7 @@ void process_request(int connfd, cfg_t * conf) {
     * PARSEO DE LA PETICION;
     * IMPORTANTE Para que el codigo sea compacto los campos del parseo deben ir en una estructura, lista, o similar
   **/
-  peticion = httpPetition_parser(read_control)
+  peticion = httpPetition_parser(read_control);
 
   /**
     * EJECUCIÓN DE LA PETICION
@@ -136,26 +136,26 @@ void process_request(int connfd, cfg_t * conf) {
 		resultado = 400;
 	}
 
-    /* En caso de error, enviar mensaje al cliente */
-	if (resultado==301) { /* Moved Permanently */
-		/* Enviar mensaje */
-		/* Liberar memoria */
-	} else if (resultado==400) { /* Bad Request */
-		/* Enviar mensaje */
-		/* Liberar memoria */
-	} else if (resultado==404) { /* Not Found */
-		/* Enviar mensaje */
-		/* Liberar memoria */
-	} else if (resultado==505) { /* HTTP Version Not Supported */
-		/* Enviar mensaje */
-		/* Liberar memoria */
-	}
+  //  /* En caso de error, enviar mensaje al cliente */
+	//if (resultado==301) { /* Moved Permanently */
+	//	/* Enviar mensaje */
+	//	/* Liberar memoria */
+	//} else if (resultado==400) { /* Bad Request */
+	//	/* Enviar mensaje */
+	//	/* Liberar memoria */
+	//} else if (resultado==404) { /* Not Found */
+	//	/* Enviar mensaje */
+	//	/* Liberar memoria */
+	//} else if (resultado==505) { /* HTTP Version Not Supported */
+	//	/* Enviar mensaje */
+	//	/* Liberar memoria */
+	//}
 }
 
 HttpPetition *httpPetition_parser(char *petition_message) {
 
   HttpPetition *peticion = NULL;
-  char *blankSpace = " ", *crlf = "\r\n" *token = NULL;
+  char *blankSpace = " ", *crlf = "\r\n", *token = NULL;
   char *metodo = NULL, *urn = NULL, *version = NULL;
 
   if (!petition_message) { /* CdE sobre los argumentos de la funcion */
