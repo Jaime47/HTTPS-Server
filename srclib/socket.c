@@ -32,7 +32,7 @@ HttpPetition *httpPetition_ini(char *metodo, char* urn, char* httpVersion);
 
 HttpPetition *httpPetition_ini(char *metodo, char* urn, char* httpVersion) {
 
-  HttpPetition *peticion = NULL;
+  HttpPetition *parser = NULL;
 
   /* CdE sobre los argumentos de la funcion */
   if (!metodo || !urn || !httpVersion) {
@@ -41,26 +41,26 @@ HttpPetition *httpPetition_ini(char *metodo, char* urn, char* httpVersion) {
   }
 
   /* Reserva memoria para la estructura. CdE sobre malloc */
-  if (!(peticion = (HttpPetition*)malloc(sizeof(HttpPetition)))) {
+  if (!(parser = (HttpPetition*)malloc(sizeof(HttpPetition)))) {
     if (DEBUG_MODE==TRUE) fprintf(stderr, MEM_ERROR, __func__);
     return NULL;
   }
 
   /* Inicializa los atributos de la ED. CdE sobre strcpy */
-  if (strcpy(peticion->method, "")==NULL) { /* Metodo http */
+  if (strcpy(parser->method, "")==NULL) { /* Metodo http */
     if (DEBUG_MODE==TRUE) fprintf(stderr, MEM_ERROR, __func__);
-    free(peticion); return NULL;
+    free(parser); return NULL;
   }
-  if (strcpy(peticion->urn, "")==NULL) { /* URN de la peticion */
+  if (strcpy(parser->urn, "")==NULL) { /* URN de la peticion */
     if (DEBUG_MODE==TRUE) fprintf(stderr, MEM_ERROR, __func__);
-    free(peticion); return NULL;
+    free(parser); return NULL;
   }
-  if (strcpy(peticion->http_version, "")==NULL) { /* Version http */
+  if (strcpy(parser->http_version, "")==NULL) { /* Version http */
     if (DEBUG_MODE==TRUE) fprintf(stderr, MEM_ERROR, __func__);
-    free(peticion); return NULL;
+    free(parser); return NULL;
   }
 
-  return peticion;
+  return parser;
 }
 
 /* ------------------------- */
@@ -99,7 +99,7 @@ void process_request(int connfd, cfg_t * conf) {
   const int iguales = 0;
   char * server_name;
   char * server_root;
-  HttpPetition *peticion = NULL;
+  HttpPetition *parser = NULL;
 
   // Leemos el mensaje que tiene el cliente.
   if ((read_control = recv(connfd, buffer, MAX_BUFF, 0))==0) {
@@ -116,7 +116,7 @@ void process_request(int connfd, cfg_t * conf) {
     * PARSEO DE LA PETICION;
     * IMPORTANTE Para que el codigo sea compacto los campos del parseo deben ir en una estructura, lista, o similar
   **/
-  peticion = httpPetition_parser(read_control);
+  parser = httpPetition_parser(read_control);
 
   /**
     * EJECUCIÓN DE LA PETICION
@@ -125,17 +125,19 @@ void process_request(int connfd, cfg_t * conf) {
   server_root = cfg_getstr(conf,"server_root");
 
   /* Comprobamos que el metodo de la peticion sea valido */
-	if (strcmp(peticion->method, "GET") == iguales) {
-		resultado = GET(); /* TODO Procesar GET */
-	} else if (strcmp(peticion->method, "POST") == iguales) {
-		resultado = POST(); /* TODO Procesar POST */
-	} else if (strcmp(peticion->method, "OPTIONS") == iguales) {
-		resultado = OPTIONS(,server_name,server_root,connfd); /* TODO Procesar OPTIONS */
+	if (strcmp(parser->method, "GET") == iguales) {
+		resultado = GET(parser,server_name,server_root,connfd); /* TODO Procesar GET */
+	} else if (strcmp(parser->method, "POST") == iguales) {
+		resultado = POST(parser,server_name,server_root,connfd); /* TODO Procesar POST */
+	} else if (strcmp(parser->method, "OPTIONS") == iguales) {
+		resultado = OPTIONS(parser,server_name,server_root,connfd); /* TODO Procesar OPTIONS */
 	} else {
 		fprintf(stderr, METHOD_ERROR, __func__, metodo);
 		resultado = 400;
 	}
 
+
+  free(parser);
   //  /* En caso de error, enviar mensaje al cliente */
 	//if (resultado==301) { /* Moved Permanently */
 	//	/* Enviar mensaje */
@@ -154,7 +156,7 @@ void process_request(int connfd, cfg_t * conf) {
 
 HttpPetition *httpPetition_parser(char *petition_message) {
 
-  HttpPetition *peticion = NULL;
+  HttpPetition *parser = NULL;
   char *blankSpace = " ", *crlf = "\r\n", *token = NULL;
   char *metodo = NULL, *urn = NULL, *version = NULL;
 
@@ -164,7 +166,7 @@ HttpPetition *httpPetition_parser(char *petition_message) {
   }
 
   /* Obtiene el metodo, la URN y la version http */
-	token = strtok(petition, blankSpace);
+	token = strtok(parser, blankSpace);
 	metodo = token;
 	token = strtok(NULL, blankSpace);
 	urn = token; /* TODO: Obtener argumentos */
@@ -174,10 +176,10 @@ HttpPetition *httpPetition_parser(char *petition_message) {
 	token = strtok(NULL, blankSpace);
 
   /* Crea la peticion. CdE sobre http_petition_ini */
-  if ((peticion = httpPetition_ini(&metodo, &urn, &version))==NULL) {
+  if ((parser = httpPetition_ini(&metodo, &urn, &version))==NULL) {
     if (DEBUG_MODE==TRUE) fprintf(stderr, MEM_ERROR, __func__);
     return NULL;
   }
 
-  return peticion;
+  return parser;
 }

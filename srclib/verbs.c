@@ -9,13 +9,24 @@
 #include<unistd.h>
 #include <time.h>
 #include"sys/stat.h"
+#define MAX_CHAR 128
+#define LINEARRAYSIZE 20
+
+
+/* ---- ED Peticion Http ---- */
+typedef struct _HttpPetition {
+  char method[MAX_CHAR];
+  char urn[MAX_CHAR];
+  char http_version[MAX_CHAR];
+} HttpPetition;
+
 /**
  * Metodo HEAD
  * 
  * 
  */
 
-char * HEAD (,char*server_name, char* server_root, int socket){
+char * HEAD (HttpPetition * parser,char*server_name, char* server_root, int socket){
     char  * url;
     char* time[50];
     time_t t;
@@ -33,18 +44,18 @@ char * HEAD (,char*server_name, char* server_root, int socket){
     strcat(response,"Date: %d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
     // Content-type
     strcat(response, "File-Type: %s\n", attrib.st_mode);
-    //Longitud del archivo(Bytes)
-    strcat(response,"Content-Lenght: %d\n", attrib.st_size);
-    //Server name
-    strcat(response, "Server: %s\n", server_name);
-
-}
-
-
+           free(buffer);
+           free(attrib);
+           return NULL;
+       }
+       buffer += i;
+       length -= i;
 
 
 
-void OPTIONS(Parser, char *server_name, char * server_root, int socket){
+
+
+void OPTIONS(HttpPetition * parser, char *server_name, char * server_root, int socket){
 
     char * url;
     char * response;
@@ -68,7 +79,7 @@ void OPTIONS(Parser, char *server_name, char * server_root, int socket){
     return;
 }
 
-void GET(   Parser,char *server_name, char * server_root, int socket){
+void GET(HttpPetition * Parser,char *server_name, char * server_root, int socket){
 
     char * url;
     char * response;
@@ -92,16 +103,26 @@ void GET(   Parser,char *server_name, char * server_root, int socket){
     strcat(response, head);
 
     strcat(response, "<html><body><h1>");
+
+    if(Parser.objectType == ".py" ||Parser.objectType == ".php"){
+    //BODY OBTENTION
+    body = scriptInterpreter(Parser);
+    }
+    else{
     //BODY OBTENTION
     body = readFile(url);
+    }
+
 
     strcat(response, body);
     strcat(response, "</h1,/body,/html>");
     write(socket, response, sizeof(response));
+    free(body);
+    
     return;
 }
 
-void POST( Parser,char *server_name, char * server_root, int socket){
+void POST(HttpPetition * parser,char *server_name, char * server_root, int socket){
 
     char * url;
     char * response;
@@ -109,6 +130,38 @@ void POST( Parser,char *server_name, char * server_root, int socket){
     char * body;
     char * hiddenParam;
     url = server_root + urlParsed + hiddenParam;
+
+        // HTTP version and code
+    if (access(url, F_OK ) != -1){
+        response = "HTTP/1.1 200 OK\n";
+    }
+    else{
+        response = "HTTP/1.1 404 NOT FOUND\n";
+    }
+
+    //HEAD
+    head = HEAD();
+
+    strcat(response, head);
+
+    strcat(response, "<html><body><h1>");
+
+    if(Parser.objectType == ".py" ||Parser.objectType == ".php"){
+    //BODY OBTENTION
+    body = scriptInterpreter(Parser);
+    }
+    else{
+    //BODY OBTENTION
+    body = readFile(url);
+    }
+
+
+    strcat(response, body);
+    strcat(response, "</h1,/body,/html>");
+    write(socket, response, sizeof(response));
+    free(body);
+    return;
+
     
 
 
@@ -147,23 +200,25 @@ char * readFile(char * location){
 
 
 //pseudocodigo
-char * scriptInterpreter(Parser){
+char * scriptInterpreter(HttpPetition * parser){
     char * command;
     char reader[1024];
+    char * output;
+    int i = 0;
 
     
-    if(Parser.objetcType = ".py"){
+    if(parser.objetcType = ".py"){
 
         strcpy(command, "pyhton3 ");
-        strcat(command, Parser.url);
+        strcat(command, parser.url);
         system(command);
 
     }
 
-    else if(Parser.objetcType = ".php"){
+    else if(parser.objetcType = ".php"){
 
         strcpy(command, "php ");
-        strcat(command, Parser.url);
+        strcat(command, parser.url);
         system(command);
 
     }
@@ -171,13 +226,21 @@ char * scriptInterpreter(Parser){
     FILE *fp = popen(command, "r");
     if (!fp)
     {
-        return;
+        return NULL;
     }
+
+    output = malloc(sizeof(reader) * LINEARRAYSIZE);
     
     while (fgets(reader, sizeof(reader), fp) != "\r\n")
     {
-        
+        strcat(output, reader);
+        if (i >= LINEARRAYSIZE){
+            realloc(output, 1024 * (LINEARRAYSIZE+i));
+        }
+        i++;
     }
+
+    return output;
 
 
 }

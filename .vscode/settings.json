@@ -6,6 +6,7 @@
         "confuse.h": "c",
         "socket.h": "c",
         "strings.h": "c",
-        "inet.h": "c"
+        "inet.h": "c",
+        "stat.h": "c"
     }
 }
