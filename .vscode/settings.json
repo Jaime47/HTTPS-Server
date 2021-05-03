@@ -7,6 +7,8 @@
         "socket.h": "c",
         "strings.h": "c",
         "inet.h": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "stdio.h": "c",
+        "unistd.h": "c"
     }
 }

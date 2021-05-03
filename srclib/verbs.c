@@ -5,30 +5,25 @@
   * @date 11 Mar 2021
   * @brief
   */
-#include<stdio.h>
-#include<unistd.h>
-#include <time.h>
-#include"sys/stat.h"
-#define MAX_CHAR 128
-#define LINEARRAYSIZE 20
+#include <verbs.h>
 
 
-/* ---- ED Peticion Http ---- */
-typedef struct _HttpPetition {
-  char method[MAX_CHAR];
-  char urn[MAX_CHAR];
-  char http_version[MAX_CHAR];
-} HttpPetition;
+
+
 
 /**
- * Metodo HEAD
+ * @brief La funcion devuelve la cabezera asociada a un elemento HTTP
  * 
+ * @param parser Parseo de la petición HTTTP asociada
+ * @param server_name Alias del servidor
+ * @param server_root Raiz del directorio del servidor en local
+ * @param socket Socket asociado a la conexion
  * 
+ * @return Cadena de caracteres con la cabecera.
  */
-
 char * HEAD (HttpPetition * parser,char*server_name, char* server_root, int socket){
     char  * url;
-    char* time[50];
+    char* timechar[50];
     time_t t;
     t = time(NULL);
     struct tm tm = *localtime(&t);
@@ -39,22 +34,27 @@ char * HEAD (HttpPetition * parser,char*server_name, char* server_root, int sock
     struct stat attrib;
     stat(url, &attrib);
     strftime(time, 50, "%Y-%m-%d %H:%M:%S\n", localtime(&attrib.st_mtime));
-    strcat(response,"Last-Modified: %s", time);
+    strcat(response,("Last-Modified: %s", timechar));
     // Date
-    strcat(response,"Date: %d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    strcat(response,("Date: %d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec));
     // Content-type
-    strcat(response, "File-Type: %s\n", attrib.st_mode);
+    strcat(response, ("File-Type: %s\n", attrib.st_mode));
            free(buffer);
-           free(attrib);
+           //free(attrib);
            return NULL;
-       }
-       buffer += i;
-       length -= i;
+    }
 
 
-
-
-
+/**
+ * @brief La funcion devuelve la cabezera de un fichero HTTP más las opciones de verbos aplicables al mismo en el servidor y la manda a traves del socket
+ * 
+ * @param parser Parseo de la petición HTTTP asociada
+ * @param server_name Alias del servidor
+ * @param server_root Raiz del directorio del servidor en local
+ * @param socket Socket asociado a la conexion
+ * 
+ * @return 
+ */
 void OPTIONS(HttpPetition * parser, char *server_name, char * server_root, int socket){
 
     char * url;
@@ -78,7 +78,16 @@ void OPTIONS(HttpPetition * parser, char *server_name, char * server_root, int s
     write(socket, response, sizeof(response));
     return;
 }
-
+/**
+ * @brief La funcion devuelve la cabezera de un fichero HTTP más el cuerpo del objeto requerido y los manda a traves del socket. Funciona para archivos y scripts
+ * 
+ * @param parser Parseo de la petición HTTTP asociada
+ * @param server_name Alias del servidor
+ * @param server_root Raiz del directorio del servidor en local
+ * @param socket Socket asociado a la conexion
+ * 
+ * @return 
+ */
 void GET(HttpPetition * Parser,char *server_name, char * server_root, int socket){
 
     char * url;
@@ -104,7 +113,7 @@ void GET(HttpPetition * Parser,char *server_name, char * server_root, int socket
 
     strcat(response, "<html><body><h1>");
 
-    if(Parser.objectType == ".py" ||Parser.objectType == ".php"){
+    if(parser.objectType == ".py" ||parser.objectType == ".php"){
     //BODY OBTENTION
     body = scriptInterpreter(Parser);
     }
@@ -121,7 +130,17 @@ void GET(HttpPetition * Parser,char *server_name, char * server_root, int socket
     
     return;
 }
-
+/**
+ * @brief La funcion devuelve la cabezera de un fichero HTTP más el cuerpo del objeto requerido y los manda a traves del socket, la diferencia con get reside en que los argumentos
+ * de la peticion vienen dados en el cuerpo de la misma. Funciona para archivos y scripts
+ * 
+ * @param parser Parseo de la petición HTTTP asociada
+ * @param server_name Alias del servidor
+ * @param server_root Raiz del directorio del servidor en local
+ * @param socket Socket asociado a la conexion
+ * 
+ * @return 
+ */
 void POST(HttpPetition * parser,char *server_name, char * server_root, int socket){
 
     char * url;
@@ -140,15 +159,15 @@ void POST(HttpPetition * parser,char *server_name, char * server_root, int socke
     }
 
     //HEAD
-    head = HEAD();
+    head = HEAD(parser, server_name, server_root,socket);
 
     strcat(response, head);
 
     strcat(response, "<html><body><h1>");
 
-    if(Parser.objectType == ".py" ||Parser.objectType == ".php"){
+    if(parser.objectType == ".py" ||parser.objectType == ".php"){
     //BODY OBTENTION
-    body = scriptInterpreter(Parser);
+    body = scriptInterpreter(parser);
     }
     else{
     //BODY OBTENTION
@@ -167,7 +186,12 @@ void POST(HttpPetition * parser,char *server_name, char * server_root, int socke
 
 }
 
-
+/**
+ * @brief La funcion recibe una localización local del archivo a nivel local, lo abre y lo lee devolviendolo como puntero a char.
+ * 
+ * @param location Localizacion del archivo a nivel local
+ * @return Archivo leido
+ */
 char * readFile(char * location){
 
     struct stat attrib;
@@ -188,7 +212,7 @@ char * readFile(char * location){
     while(i=fread(buffer,1,length,file), length >0 && i != 0 ){
        if(i == -1){
            free(buffer);
-           free(attrib);
+        //   free(attrib);
            return NULL;
        }
        buffer += i;
@@ -199,7 +223,13 @@ char * readFile(char * location){
 }
 
 
-//pseudocodigo
+/**
+ * @brief La funcion interpreta scripts .py y .php, los ejecuta por terminal y lee su salida estandar.
+ * 
+ * @param parser Parseo de la peticion http asociada
+ * 
+ * @return Cadena de caracteres de la estandar output del servidor.
+ */
 char * scriptInterpreter(HttpPetition * parser){
     char * command;
     char reader[1024];

@@ -1,3 +1,10 @@
+/**
+  * @author Jaime Pons Garrido
+  * @author Federico Perez Fernandez
+  * @file verbs.c
+  * @date 11 Mar 2021
+  * @brief
+  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -10,26 +17,19 @@
 #include "socket.h"
 
 
-cfg_t * conf_parser(){
-    static char * server_root = NULL;
-    static char * server_signature = NULL;    
-    static long int max_clients;
-    static long int listen_port;
-    cfg_opt_t opts[] = {
-        CFG_SIMPLE_STR("server_root", &server_root),
-        CFG_SIMPLE_INT("max_clients", &max_clients),
-        CFG_SIMPLE_INT("listen_port", &listen_port),
-        CFG_SIMPLE_STR("server_signature", &server_signature),
-        CFG_END()
-    };
-    cfg_t *cfg;
-    cfg_init(opts, 0);
-    cfg_parse(cfg, "server.conf");
-    return cfg;
-} // Acordarse de libera : cfg, server_root y server_signature
 
 
 
+/**
+ * @brief La funcion se encarga de definir el comportamiento de cada proceso hijo de modo que reciba conexiones desde su socket asignado
+ * 
+ * @param i Numero del subproceso hijo
+ * @param listenfd Identificador de la conexion
+ * @param addrlen Longitud de la address
+ * @param conf Archivo de configuracion del server
+ * 
+ * @return
+ */
 void child_main(int i, int listenfd, int addrlen, cfg_t * conf){
     int clilen, connfd;
     
@@ -45,7 +45,12 @@ void child_main(int i, int listenfd, int addrlen, cfg_t * conf){
     }
 }
 
-
+/**
+ * 
+ *@brief Main: Proceso principal que inicializa el servidor, lee el archivo de configuracion y comienza a crear los procesos hijos de este. 
+ * 
+ * 
+ */
 int main(int argc, char *argv)
 {
 

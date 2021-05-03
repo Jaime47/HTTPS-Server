@@ -1,14 +1,15 @@
 
+/**
+  * @author Jaime Pons Garrido
+  * @author Federico Perez Fernandez
+  * @file verbs.c
+  * @date 11 Mar 2021
+  * @brief
+  */
 #include "socket.h"
 
 /* ---- Defines ---- */
-#define ARG_ERROR "ERROR(%s): Los argumentos de la funcion son erroneos\n"
-#define METHOD_ERROR "ERROR(%d): Metodo \"%s\" no soportado\n"
-#define RECV_ERROR "ERROR(%d): La lectura de la peticion del cliente ha fallado\n"
-#define MEM_ERROR "ERROR(%s): No ha sido posible reservar memoria\n"
-#define MAX_BUFF 3000
-#define MAX_CHAR 128
-#define DEBUG_MODE FALSE
+
 
 /* ---- ED Peticion Http ---- */
 typedef struct _HttpPetition {
@@ -19,6 +20,7 @@ typedef struct _HttpPetition {
 
 /* ---- Private Methods ---- */
 
+
 /**
   * @brief Inicializa la estructura de datos HttpPetition
   *
@@ -28,8 +30,6 @@ typedef struct _HttpPetition {
   *
   * @return puntero a estructura inicializada, NULL en caso de error
   */
-HttpPetition *httpPetition_ini(char *metodo, char* urn, char* httpVersion);
-
 HttpPetition *httpPetition_ini(char *metodo, char* urn, char* httpVersion) {
 
   HttpPetition *parser = NULL;
@@ -64,7 +64,14 @@ HttpPetition *httpPetition_ini(char *metodo, char* urn, char* httpVersion) {
 }
 
 /* ------------------------- */
-
+/**
+ * @brief  server_ini : Inicializa un servidor asignandole socket y comenzando el proceso de recepcion
+ * 
+ * @param addrlen Longitud de la direccion del socket
+ * @param conf Estructura del tipo cfg_t con los datos de configuración del server
+ * 
+ * @return
+ **/
 int server_ini(socklen_t * addrlen, cfg_t * conf){
 
     int sockvalue;
@@ -91,7 +98,13 @@ int server_ini(socklen_t * addrlen, cfg_t * conf){
 
     return sockvalue;
 }
-
+/**
+ * @brief Recibe un descriptor de fichero y procesa el mensaje en el servidor
+ * @param connfd Descriptor de fichero
+ * @param conf Estructura del tipo cfg_t con los datos de configuración del server 
+ * @return
+ *
+ **/
 void process_request(int connfd, cfg_t * conf) {
 
   char * buffer[MAX_BUFF];
@@ -126,14 +139,14 @@ void process_request(int connfd, cfg_t * conf) {
 
   /* Comprobamos que el metodo de la peticion sea valido */
 	if (strcmp(parser->method, "GET") == iguales) {
-		resultado = GET(parser,server_name,server_root,connfd); /* TODO Procesar GET */
+		GET(parser,server_name,server_root,connfd); /* TODO Procesar GET */
 	} else if (strcmp(parser->method, "POST") == iguales) {
-		resultado = POST(parser,server_name,server_root,connfd); /* TODO Procesar POST */
+		POST(parser,server_name,server_root,connfd); /* TODO Procesar POST */
 	} else if (strcmp(parser->method, "OPTIONS") == iguales) {
-		resultado = OPTIONS(parser,server_name,server_root,connfd); /* TODO Procesar OPTIONS */
+		OPTIONS(parser,server_name,server_root,connfd); /* TODO Procesar OPTIONS */
 	} else {
-		fprintf(stderr, METHOD_ERROR, __func__, metodo);
-		resultado = 400;
+	  write(connfd, METHOD_ERROR, sizeof(METHOD_ERROR));
+
 	}
 
 
@@ -153,7 +166,14 @@ void process_request(int connfd, cfg_t * conf) {
 	//	/* Liberar memoria */
 	//}
 }
-
+/**
+  * @brief Parsea una cadena de texto para ser procesada por el servidor.
+  * Inicializa la estructura HttpPetition.
+  *
+  * @param petition_message Puntero al mensaje con la peticion http del cliente
+  *
+  * @return estructura en caso de exito, NULL en caso de error
+  */
 HttpPetition *httpPetition_parser(char *petition_message) {
 
   HttpPetition *parser = NULL;
@@ -171,7 +191,7 @@ HttpPetition *httpPetition_parser(char *petition_message) {
 	token = strtok(NULL, blankSpace);
 	urn = token; /* TODO: Obtener argumentos */
 	token = strtok(NULL, blankSpace);
-	toke = strtok(token, crlf)
+	token = strtok(token, crlf);
 	version = token;
 	token = strtok(NULL, blankSpace);
 
@@ -183,3 +203,27 @@ HttpPetition *httpPetition_parser(char *petition_message) {
 
   return parser;
 }
+
+/**
+ * @brief conf_parser : Lee el archivo de configuracion y parsea sus elementos clave-valor
+ * @param
+ * @return Structure with server configuration
+ **/
+
+cfg_t * conf_parser(){
+    static char * server_root = NULL;
+    static char * server_signature = NULL;    
+    static long int max_clients;
+    static long int listen_port;
+    cfg_opt_t opts[] = {
+        CFG_SIMPLE_STR("server_root", &server_root),
+        CFG_SIMPLE_INT("max_clients", &max_clients),
+        CFG_SIMPLE_INT("listen_port", &listen_port),
+        CFG_SIMPLE_STR("server_signature", &server_signature),
+        CFG_END()
+    };
+    cfg_t *cfg;
+    cfg_init(opts, 0);
+    cfg_parse(cfg, "server.conf");
+    return cfg;
+} // Acordarse de libera : cfg, server_root y server_signature

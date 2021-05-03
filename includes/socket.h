@@ -1,8 +1,21 @@
+/**
+  * @author Jaime Pons Garrido
+  * @author Federico Perez Fernandez
+  * @file verbs.c
+  * @date 11 Mar 2021
+  * @brief
+  */
 #ifndef _socket
-
 #define _socket
 #define _GNU_SOURCE
-
+#define ARG_ERROR "ERROR(%s): Los argumentos de la funcion son erroneos\n"
+#define METHOD_ERROR "ERROR(%d): Metodo \"%s\" no soportado\n"
+#define RECV_ERROR "ERROR(%d): La lectura de la peticion del cliente ha fallado\n"
+#define MEM_ERROR "ERROR(%s): No ha sido posible reservar memoria\n"
+#define MAX_BUFF 3000
+#define MAX_CHAR 128
+#define DEBUG_MODE 0
+#define TRUE 1
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -15,26 +28,28 @@
 #include <syslog.h>
 #include <confuse.h>
 
-// LAS SIGUIENTES TRES FUNCIONES ESTAN ENCAPSULADAS EN LA FUNCION server_ini
 
-//Funcion de encapsulamiento (utlizando sys/socket.h)
-//int socket(int family, int type, int protocol);
-//Funcion de encapsulamiento (utlizando sys/socket.h)
-//int bind(int socket, struct sockaddr * localaddr, int addrlen);
-//Funcion de encapsulamiento (utlizando sys/socket.h)
-//int listen(int socket, int queue_size);
-//Funcion de encapsulamiento (utlizando sys/socket.h)
+/* ---- ED Peticion Http ---- */
+typedef struct _HttpPetition {
+  char method[MAX_CHAR];
+  char urn[MAX_CHAR];
+  char http_version[MAX_CHAR];
+} HttpPetition;
 
 
-int accept( int socket, struct sockaddr * foreignaddr, int addrlen);
-//Funcion de encapsulamiento (utlizando sys/socket.h)
-int connect(int sockfd, struct sockaddr * foreignaddrr, int addrlen);
-//Funcion de encapsulamiento (utlizando sys/socket.h)
-int close(int socket);
-//Funcion de encapsulamiento (utlizando sys/socket.h)
-int send(int socket, void *buf, size_t len, int flags);
-//Funcion de encapsulamiento (utlizando sys/socket.h)
-int read(int fd, void *buf, size_t count);
+
+
+
+/**
+  * @brief Inicializa la estructura de datos HttpPetition
+  *
+  * @param metodo Metodo de la peticion
+  * @param urn Direccion del recurso solicitado
+  * @param http_version Verion del protocolo Http
+  *
+  * @return puntero a estructura inicializada, NULL en caso de error
+  */
+HttpPetition *httpPetition_ini(char *metodo, char* urn, char* httpVersion);
 
 /**
   * @brief Parsea una cadena de texto para ser procesada por el servidor.
@@ -44,31 +59,33 @@ int read(int fd, void *buf, size_t count);
   *
   * @return estructura en caso de exito, NULL en caso de error
   */
-HttpPetition *http_parser(char *petition_message);
+HttpPetition *httpPetition_parser(char *petition_message);
 
 /**
- * Funcion: server_ini : Inicializa un servidor asignandole socket y comenzando el proceso de recepcion
- * Argumentos:
- * addrlen: Puntero que registra el tamaño de la direccion del socket, se usa en el main.
- * Retorno:
+ * @brief  server_ini : Inicializa un servidor asignandole socket y comenzando el proceso de recepcion
+ * 
+ * @param addrlen Longitud de la direccion del socket
+ * @param conf Estructura del tipo cfg_t con los datos de configuración del server
+ * 
+ * @return
  **/
 int server_ini(socklen_t * addrlen, cfg_t * conf);
 
 /**
- * Funcion: process_request : Recibe un descriptor de fichero y procesa el mensaje en el servidor
- * Argumentos:
- *  connfd: Descriptor de fichero
- * Retorno:
+ * @brief Recibe un descriptor de fichero y procesa el mensaje en el servidor
+ * @param connfd Descriptor de fichero
+ * @param conf Estructura del tipo cfg_t con los datos de configuración del server 
+ * @return
  *
  **/
-void process_request(int connfd);
+void process_request(int connfd, cfg_t * conf);
 
 /**
- * Funcion: conf_parser : Lee el archivo de configuracion y parsea sus elementos clave-valor
- * Argumentos:
- * Retorno:
+ * @brief conf_parser : Lee el archivo de configuracion y parsea sus elementos clave-valor
+ * @param
+ * @return Structure with server configuration
  **/
 
-void conf_parser();
+cfg_t * conf_parser();
 
 #endif
