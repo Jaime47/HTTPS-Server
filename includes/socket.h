@@ -27,29 +27,32 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <confuse.h>
+#include "picohttpparser.h"
+
+
 
 
 /* ---- ED Peticion Http ---- */
 typedef struct _HttpPetition {
-  char method[MAX_CHAR];
-  char urn[MAX_CHAR];
-  char http_version[MAX_CHAR];
+  char * method;
+  char * path;
+  int petitionLength;
+  int minorVetsion;
+  int methodLength;
+  int path_len;
+  int num_headers;
+  struct phr_header * headers;
+  char * objectType;
 } HttpPetition;
 
 
 
 
 
-/**
-  * @brief Inicializa la estructura de datos HttpPetition
-  *
-  * @param metodo Metodo de la peticion
-  * @param urn Direccion del recurso solicitado
-  * @param http_version Verion del protocolo Http
-  *
-  * @return puntero a estructura inicializada, NULL en caso de error
-  */
-HttpPetition *httpPetition_ini(char *metodo, char* urn, char* httpVersion);
+
+
+
+
 
 /**
   * @brief Parsea una cadena de texto para ser procesada por el servidor.
@@ -59,7 +62,7 @@ HttpPetition *httpPetition_ini(char *metodo, char* urn, char* httpVersion);
   *
   * @return estructura en caso de exito, NULL en caso de error
   */
-HttpPetition *httpPetition_parser(char *petition_message);
+HttpPetition *httpPetition_parser(int socket);
 
 /**
  * @brief  server_ini : Inicializa un servidor asignandole socket y comenzando el proceso de recepcion
@@ -87,5 +90,6 @@ void process_request(int connfd, cfg_t * conf);
  **/
 
 cfg_t * conf_parser();
-
+void freeParser(HttpPetition * parser);
+HttpPetition * httpPetition_ini(char * method, char * path, int petitionLength, int minorVersion, int methodLength, int path_len, int num_headers, struct phr_headers * headers, char * objectType);
 #endif

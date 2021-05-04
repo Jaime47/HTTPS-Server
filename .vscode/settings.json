@@ -9,6 +9,8 @@
         "inet.h": "c",
         "stat.h": "c",
         "stdio.h": "c",
-        "unistd.h": "c"
-    }
+        "unistd.h": "c",
+        "picohttpparser.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }

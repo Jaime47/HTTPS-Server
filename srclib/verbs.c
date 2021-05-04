@@ -28,7 +28,8 @@ char * HEAD (HttpPetition * parser,char*server_name, char* server_root, int sock
     t = time(NULL);
     struct tm tm = *localtime(&t);
     char * response;
-    url = server_root + urlParsed;
+    
+    url = strcat(server_root,parser->path);
 
     //Last-Modified
     struct stat attrib;
@@ -39,9 +40,12 @@ char * HEAD (HttpPetition * parser,char*server_name, char* server_root, int sock
     strcat(response,("Date: %d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec));
     // Content-type
     strcat(response, ("File-Type: %s\n", attrib.st_mode));
-           free(buffer);
-           //free(attrib);
            return NULL;
+    //Server name
+    strcat(response, ("Server: %s", server_name));
+    //Content length
+    strcat(response,("File-length: %s", attrib.st_size));
+
     }
 
 
@@ -59,8 +63,9 @@ void OPTIONS(HttpPetition * parser, char *server_name, char * server_root, int s
 
     char * url;
     char * response;
-    url = server_root + urlParsed;
     char * head;
+
+    url = strcat(server_root,parser->path);
 
     // HTTP version and code
     if (access(url, F_OK ) != -1){
@@ -71,7 +76,7 @@ void OPTIONS(HttpPetition * parser, char *server_name, char * server_root, int s
     }
     //Allow
     strcat(response,"Allow: GET, POST, OPTIONS\n");
-    head = HEAD();
+    head = HEAD(parser, server_name, server_root,socket);
     strcat(response, head);
     //Sending response
 
@@ -88,15 +93,15 @@ void OPTIONS(HttpPetition * parser, char *server_name, char * server_root, int s
  * 
  * @return 
  */
-void GET(HttpPetition * Parser,char *server_name, char * server_root, int socket){
+void GET(HttpPetition * parser,char *server_name, char * server_root, int socket){
 
     char * url;
     char * response;
     char * head;
     char * body;
     
-    url = server_root + urlParsed;
-    
+    url = strcat(server_root,parser->path);
+    char * ot = fileTypeSwitch(parser);
 
     // HTTP version and code
     if (access(url, F_OK ) != -1){
@@ -107,15 +112,15 @@ void GET(HttpPetition * Parser,char *server_name, char * server_root, int socket
     }
 
     //HEAD
-    head = HEAD();
+    head = HEAD(parser, server_name, server_root,socket);
 
     strcat(response, head);
 
     strcat(response, "<html><body><h1>");
 
-    if(parser.objectType == ".py" ||parser.objectType == ".php"){
+    if(strcmp(ot, "py") == 0 ||strcmp(ot, "py") == 0){
     //BODY OBTENTION
-    body = scriptInterpreter(Parser);
+    body = scriptInterpreter(parser);
     }
     else{
     //BODY OBTENTION
@@ -148,7 +153,10 @@ void POST(HttpPetition * parser,char *server_name, char * server_root, int socke
     char * head;
     char * body;
     char * hiddenParam;
-    url = server_root + urlParsed + hiddenParam;
+    url = strcat(server_root, parser->path);
+    url = strcat(url, parser->headers[0].value);
+
+    char * ot = fileTypeSwitch(parser);
 
         // HTTP version and code
     if (access(url, F_OK ) != -1){
@@ -165,7 +173,7 @@ void POST(HttpPetition * parser,char *server_name, char * server_root, int socke
 
     strcat(response, "<html><body><h1>");
 
-    if(parser.objectType == ".py" ||parser.objectType == ".php"){
+    if(strcmp(ot, "py") == 0 ||strcmp(ot, "py") == 0){
     //BODY OBTENTION
     body = scriptInterpreter(parser);
     }
@@ -235,20 +243,22 @@ char * scriptInterpreter(HttpPetition * parser){
     char reader[1024];
     char * output;
     int i = 0;
+    char * ot;
+    ot = fileTypeSwitch(parser);
 
     
-    if(parser.objetcType = ".py"){
+    if(strcmp(ot, "py") == 0){
 
         strcpy(command, "pyhton3 ");
-        strcat(command, parser.url);
+        strcat(command, parser->path);
         system(command);
 
     }
 
-    else if(parser.objetcType = ".php"){
+    else if(strcmp(ot, "php") == 0){
 
         strcpy(command, "php ");
-        strcat(command, parser.url);
+        strcat(command, parser->path);
         system(command);
 
     }
@@ -272,5 +282,54 @@ char * scriptInterpreter(HttpPetition * parser){
 
     return output;
 
+
+}
+
+
+
+char * fileTypeSwitch(HttpPetition * parser){
+
+    char * ext = parser->objectType;
+
+    if (strcmp(ext, "txt") == 0) 
+    {
+        return "text/plain";
+    } 
+else if (strcmp(ext, "htm") == 0)
+    {
+        return "text/html";
+    }
+else if (strcmp(ext, "gif") == 0)
+    {
+        return "image/gif";
+    }
+else if (strcmp(ext, "jpg") == 0 || strcmp(ext, "jpe") == 0) 
+    {
+        return "image/jpeg";
+    }
+else if (strcmp(ext, "mpe") == 0 || strcmp(ext, "mpg") == 0) 
+    {
+        return "video/mpeg";
+    }
+else if (strcmp(ext, "doc") == 0)
+    {
+        return "application/msword";
+    }
+else if (strcmp(ext, "pdf") == 0)
+    {
+        return "application/pdf";
+    }
+else if (strcmp(ext, ".py") == 0)
+{
+        return "py";
+}
+else if (strcmp(ext, "php") == 0)
+    {
+        return "php";
+    }
+else 
+    {
+        return "ERROR";
+    }
 
 }
