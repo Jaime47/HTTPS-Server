@@ -266,6 +266,8 @@ HttpPetition *httpPetition_parser(int socket)
   int body_list_size;
   int i = 0;
   char * body;
+  char * piece;
+  
   while (1)
   {
     /* read the request */
@@ -292,26 +294,27 @@ HttpPetition *httpPetition_parser(int socket)
 
 
   /* Obtener argumentos del path*/
-  dot = strtok(path,"?");
-  dot = strtok(dot, "=");
-  pathList[i] = dot;
-  i++;
-  while(dot = strtok(dot,"&") != NULL){
-    dot = strtok(dot, "=");
-    pathList[i] = dot;
+  dot = strtok_r(path,"?", &path);
+
+ while(piece = strtok_r(dot, "&",&dot) != NULL){
+    dot = strtok_r(dot, "&", &dot);
+    strtok_r(piece, "=", &piece);
+    pathList[i] = strtok_r(piece,"=", &piece);
     i++;
   }
   path_list_size = i;
   i = 0;
+
   /* Obtener argumentos del cuerpo*/
   body = buf + pret;
-  while(body == strtok(body, "=") != NULL){
-    bodyList[i] = body;
+  
+  while(piece = strtok_r(body, "&", &body) != NULL){
+    body = strtok_r(body, "&", &body);
+    strtok_r(piece, "=", &piece);
+    bodyList[i] = strtok_r(piece,"=",&piece);
     i++;
   }
-
-  
-
+  body_list_size = i;
 
   /* Ahora insertamos todos los elementos en nuestra estructura HttpPetition*/
   parser = httpPetition_ini(method, path, pret, minor_version, method_len, path_len, num_headers, headers, objectType, path_list_size, pathList, body_list_size, bodyList);
@@ -324,6 +327,9 @@ void freeParser(HttpPetition * parser){
   free(parser->method);
   free(parser->objectType);
   free(parser->path);
+  free(parser->bodyList);
+  free(parser->pathList);
+  free(parser->headers);
   free(parser);
 }
 
