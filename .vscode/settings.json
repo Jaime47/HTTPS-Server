@@ -10,7 +10,8 @@
         "stat.h": "c",
         "stdio.h": "c",
         "unistd.h": "c",
-        "picohttpparser.h": "c"
+        "picohttpparser.h": "c",
+        "conf.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

@@ -24,7 +24,7 @@
   *
   * @return puntero a estructura inicializada, NULL en caso de error
   */
-HttpPetition *httpPetition_ini(char * method, char * path, int petitionLength, int minorVersion, int methodLength, int path_len, int num_headers, struct phr_headers * headers, char * objectType)
+HttpPetition *httpPetition_ini(char * method, char * path, int petitionLength, int minorVersion, int methodLength, int path_len, int num_headers, struct phr_headers * headers, char * objectType,int path_List_size, char * pathList, int body_list_size, char * bodyList)
 {
 
   HttpPetition *parser = NULL;
@@ -104,6 +104,39 @@ HttpPetition *httpPetition_ini(char * method, char * path, int petitionLength, i
     free(parser);
     return NULL;
   }
+
+    if (parser->path_list_size = path_List_size == NULL)
+  {
+    if (DEBUG_MODE == TRUE)
+      fprintf(stderr, MEM_ERROR, __func__);
+    free(parser);
+    return NULL;
+  }
+
+    if (parser->body_list_size = body_list_size == NULL)
+  {
+    if (DEBUG_MODE == TRUE)
+      fprintf(stderr, MEM_ERROR, __func__);
+    free(parser);
+    return NULL;
+  }
+
+    if (parser->pathList = pathList == NULL)
+  {
+    if (DEBUG_MODE == TRUE)
+      fprintf(stderr, MEM_ERROR, __func__);
+    free(parser);
+    return NULL;
+  }
+
+    if (parser->bodyList = bodyList == NULL)
+  {
+    if (DEBUG_MODE == TRUE)
+      fprintf(stderr, MEM_ERROR, __func__);
+    free(parser);
+    return NULL;
+  }
+
 
   return parser;
 }
@@ -227,6 +260,12 @@ HttpPetition *httpPetition_parser(int socket)
   size_t buflen = 0, prevbuflen = 0, method_len, path_len, num_headers;
   ssize_t rret;
   char * objectType;
+  char * pathList[20];
+  char * bodyList[20];
+  int path_list_size;
+  int body_list_size;
+  int i = 0;
+  char * body;
   while (1)
   {
     /* read the request */
@@ -251,8 +290,31 @@ HttpPetition *httpPetition_parser(int socket)
   const char *dot = strrchr(path, '.');
   objectType = dot + 1;
 
+
+  /* Obtener argumentos del path*/
+  dot = strtok(path,"?");
+  dot = strtok(dot, "=");
+  pathList[i] = dot;
+  i++;
+  while(dot = strtok(dot,"&") != NULL){
+    dot = strtok(dot, "=");
+    pathList[i] = dot;
+    i++;
+  }
+  path_list_size = i;
+  i = 0;
+  /* Obtener argumentos del cuerpo*/
+  body = buf + pret;
+  while(body == strtok(body, "=") != NULL){
+    bodyList[i] = body;
+    i++;
+  }
+
+  
+
+
   /* Ahora insertamos todos los elementos en nuestra estructura HttpPetition*/
-  parser = httpPetition_ini(method, path, pret, minor_version, method_len, path_len, num_headers, headers, objectType);
+  parser = httpPetition_ini(method, path, pret, minor_version, method_len, path_len, num_headers, headers, objectType, path_list_size, pathList, body_list_size, bodyList);
   
   }
 }
@@ -265,26 +327,5 @@ void freeParser(HttpPetition * parser){
   free(parser);
 }
 
-/**
- * @brief conf_parser : Lee el archivo de configuracion y parsea sus elementos clave-valor
- * @param
- * @return Structure with server configuration
- **/
 
-cfg_t *conf_parser()
-{
-  static char *server_root = NULL;
-  static char *server_signature = NULL;
-  static long int max_clients;
-  static long int listen_port;
-  cfg_opt_t opts[] = {
-      CFG_SIMPLE_STR("server_root", &server_root),
-      CFG_SIMPLE_INT("max_clients", &max_clients),
-      CFG_SIMPLE_INT("listen_port", &listen_port),
-      CFG_SIMPLE_STR("server_signature", &server_signature),
-      CFG_END()};
-  cfg_t *cfg;
-  cfg_init(opts, 0);
-  cfg_parse(cfg, "server.conf");
-  return cfg;
 } // Acordarse de libera : cfg, server_root y server_signature
