@@ -7,10 +7,10 @@
   */
 
 #include <confuse.h>
-#ifndef _conf.h
+#ifndef conf_h
 
 
-#define _conf.h
+#define conf_h
 
 
 /**
@@ -20,3 +20,6 @@
  **/
 
 cfg_t *conf_parser();
+
+
+#endif

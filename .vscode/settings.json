@@ -11,7 +11,10 @@
         "stdio.h": "c",
         "unistd.h": "c",
         "picohttpparser.h": "c",
-        "conf.h": "c"
+        "conf.h": "c",
+        "my_lock.h": "c",
+        "verbs.h": "c",
+        "http.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled"
 }

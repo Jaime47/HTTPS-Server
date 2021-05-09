@@ -6,6 +6,7 @@
   * @brief
   */
 #ifndef _my_lock
+#include <unistd.h>
 #include <sys/mman.h>
 #include <pthread.h>
 #include <fcntl.h>

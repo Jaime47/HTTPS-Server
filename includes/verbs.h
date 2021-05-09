@@ -4,9 +4,12 @@
 #include<unistd.h>
 #include <time.h>
 #include"sys/stat.h"
-#include <socket.h>
+#include "../includes/socket.h"
+#include "../includes/http.h"
 #define MAX_CHAR 128
 #define LINEARRAYSIZE 20
+
+
 
 /**
  * @brief La funcion devuelve la cabezera asociada a un elemento HTTP

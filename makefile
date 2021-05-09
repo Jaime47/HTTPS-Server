@@ -1,41 +1,65 @@
-CC = gcc
-CFLAGS = -g -Wall -Iincludes
-EXE = server client
 
-all : $(EXE)
+CC=gcc
 
-server: server.o socket.a conf.a verbs.a
-	$(CC) $(CFLAGS) -pthread -o server obj/server.o lib/socket.a lib/conf.a lib/verbs.a
+# Opciones de compilacion
+CFLAGS= -Wall -Wextra -g
 
-server.o : src/server.c
-	$(CC) $(CFLAGS) -c src/server.c -o obj/server.o
+# Opciones de enlazado
+# Directorios de los ficheros
 
-socket.o : srclib/socket.c
-	$(CC) $(CFLAGS) -c srclib/socket.c -o obj/socket.o
+$(shell mkdir -p obj bin lib)
 
-socket.a: socket.o
-	ar -rcs lib/socket.a obj/socket.o
+SRCPATH = ./src/
+SRCLIBPATH = ./srclib/
+INCPATH = ./includes/
+OBJPATH = ./obj/
+EJCPATH = ./bin/
+LIBRARYPATH = ./lib/
 
-conf.o : srclib/conf.c
-	$(CC) $(CFLAGS) -c srclib/conf.c -o obj/conf.o
+# Ejecutables
+EJS = server
+OBJECTSserver =  server.o conf.o picohttpparser.o my_lock.o socket.o verbs.o libsocket libpicoparse libverbs
 
-conf.a: conf.o
-	ar -rcs lib/conf.a obj/conf.o
+#============================================================
+# Generacion de ejecutables
+#============================================================
 
-verbs.o : srclib/verbs.c
-	$(CC) $(CFLAGS) -c srclib/verbs.c -o obj/verbs.o
+all: $(EJS)
 
-verbs.a: verbs.o
-	ar -rcs lib/verbs.a obj/verbs.o
+server: $(OBJECTSserver) 
+	$(CC) $(CFLAGS) -o $(EJCPATH)server $(OBJPATH)server.o $(OBJPATH)conf.o $(OBJPATH)picohttpparser.o $(OBJPATH)my_lock.o $(OBJPATH)socket.o $(OBJPATH)verbs.o -lconfuse -lpthread
 
-picohttpparser.o : srclib/picohttpparser.c
-	$(CC) $(CFLAGS) -c srclib/picohttpparser.c -o obj/picohttpparser.o
+#=============================================================
+# Generación de archivos .o
+#=============================================================
 
-picohttpparser.a: picohttpparser.o
-	ar -rcs lib/picohttpparser.a obj/picohttpparser.o
+server.o: $(SRCPATH)server.c $(INCPATH)conf.h $(INCPATH)my_lock.h $(INCPATH)socket.h $(INCPATH)verbs.h
+	$(CC) $(CFLAGS) -c $(SRCPATH)server.c -o $(OBJPATH)server.o
+
+conf.o: $(SRCLIBPATH)conf.c $(INCPATH)conf.h
+	$(CC) $(CFLAGS) -c $(SRCLIBPATH)conf.c -o $(OBJPATH)conf.o
+
+picohttpparser.o: $(SRCLIBPATH)picohttpparser.c $(INCPATH)picohttpparser.h
+	$(CC) $(CFLAGS) -c $(SRCLIBPATH)picohttpparser.c -o $(OBJPATH)picohttpparser.o
+
+my_lock.o: $(SRCLIBPATH)my_lock.c $(INCPATH)my_lock.h $(INCPATH)picohttpparser.h
+	$(CC) $(CFLAGS) -c $(SRCLIBPATH)my_lock.c -o $(OBJPATH)my_lock.o
+
+socket.o: $(SRCLIBPATH)socket.c $(INCPATH)socket.h
+	$(CC) $(CFLAGS) -c $(SRCLIBPATH)socket.c -o $(OBJPATH)socket.o
+
+verbs.o: $(SRCLIBPATH)verbs.c $(INCPATH)verbs.h
+	$(CC) $(CFLAGS) -c $(SRCLIBPATH)verbs.c -o $(OBJPATH)verbs.o
+
+libsocket: $(OBJPATH)socket.o
+	ar cr $(LIBRARYPATH)libsocket.a $(OBJPATH)socket.o
+
+libverbs: $(OBJPATH)verbs.o
+	ar cr $(LIBRARYPATH)libverbs.a $(OBJPATH)verbs.o
+
+libpicoparse: $(OBJPATH)picohttpparser.o
+	ar cr $(LIBRARYPATH)libpicoparse.a $(OBJPATH)picohttpparser.o
 
 clean:
-	rm -rvf obj/*.o lib/*.a *.tgz $(EXE) *.txt
-
-dist : clean
-	tar zcvf nombre.tgz makefile *.*
+	rm -rf $(EJCPATH)server $(OBJPATH)*.o $(STATICPATH)*.a
+	rm -r obj bin lib

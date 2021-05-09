@@ -7,7 +7,7 @@
   * @brief
   */
 
-#include <conf.h>
+#include "../includes/conf.h"
 
 
 /**
@@ -29,6 +29,7 @@ cfg_t *conf_parser()
       CFG_SIMPLE_STR("server_signature", &server_signature),
       CFG_END()};
   cfg_t *cfg;
-  cfg_init(opts, 0);
+  cfg = cfg_init(opts, 0);
   cfg_parse(cfg, "server.conf");
   return cfg;
+}

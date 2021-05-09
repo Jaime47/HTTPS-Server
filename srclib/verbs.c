@@ -5,11 +5,11 @@
   * @date 11 Mar 2021
   * @brief
   */
-#include <verbs.h>
+#include "../includes/verbs.h"
 
 
 
-
+char * fileTypeSwitch(HttpPetition * parser);
 
 /**
  * @brief La funcion devuelve la cabezera asociada a un elemento HTTP
@@ -23,28 +23,34 @@
  */
 char * HEAD (HttpPetition * parser,char*server_name, char* server_root, int socket){
     char  * url;
-    char* timechar[50];
+    char timechar[50];
     time_t t;
+    char * aux = NULL;
     t = time(NULL);
     struct tm tm = *localtime(&t);
-    char * response;
+    char * response = NULL;
     
     url = strcat(server_root,parser->path);
 
     //Last-Modified
     struct stat attrib;
     stat(url, &attrib);
-    strftime(time, 50, "%Y-%m-%d %H:%M:%S\n", localtime(&attrib.st_mtime));
-    strcat(response,("Last-Modified: %s", timechar));
+    strftime(timechar, 50, "%Y-%m-%d %H:%M:%S\n", localtime(&attrib.st_mtime));
+    sprintf(response,"Last-Modified: %s", timechar);
     // Date
-    strcat(response,("Date: %d-%02d-%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec));
+    sprintf(aux,"Date: %d-%02d-%02d %02d:%02d:%02d\n",tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+    strcat(response, aux);
     // Content-type
-    strcat(response, ("File-Type: %s\n", attrib.st_mode));
-           return NULL;
+    sprintf(aux,"File-Type: %s\n",fileTypeSwitch(parser));
+    strcat(response, aux);
     //Server name
-    strcat(response, ("Server: %s", server_name));
+    sprintf(aux, "Server: %s", server_name);
+    strcat(response, aux);
     //Content length
-    strcat(response,("File-length: %s", attrib.st_size));
+    sprintf(aux, "File-length: %ld", attrib.st_size);
+    strcat(response,aux);
+
+    return response;
 
     }
 
@@ -152,9 +158,9 @@ void POST(HttpPetition * parser,char *server_name, char * server_root, int socke
     char * response;
     char * head;
     char * body;
-    char * hiddenParam;
+    
     url = strcat(server_root, parser->path);
-    url = strcat(url, parser->headers[0].value);
+    //url = strcat(url, parser->headers[0].value); DONDE INTRODUCES LAS VARIABLES DEL CUERPO
 
     char * ot = fileTypeSwitch(parser);
 
@@ -249,7 +255,7 @@ char * scriptInterpreter(HttpPetition * parser){
     
     if(strcmp(ot, "py") == 0){
 
-        strcpy(command, "pyhton3 ");
+        command = "python3 ";
         strcat(command, parser->path);
         system(command);
 
@@ -257,7 +263,7 @@ char * scriptInterpreter(HttpPetition * parser){
 
     else if(strcmp(ot, "php") == 0){
 
-        strcpy(command, "php ");
+        command = "php ";
         strcat(command, parser->path);
         system(command);
 
@@ -271,11 +277,11 @@ char * scriptInterpreter(HttpPetition * parser){
 
     output = malloc(sizeof(reader) * LINEARRAYSIZE);
     
-    while (fgets(reader, sizeof(reader), fp) != "\r\n")
+    while (strcmp(fgets(reader, sizeof(reader), fp), "\r\n") != 0)
     {
         strcat(output, reader);
         if (i >= LINEARRAYSIZE){
-            realloc(output, 1024 * (LINEARRAYSIZE+i));
+            output = realloc(output, 1024 * (LINEARRAYSIZE+i));
         }
         i++;
     }

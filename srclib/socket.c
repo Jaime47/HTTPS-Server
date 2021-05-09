@@ -6,7 +6,7 @@
   * @date 11 Mar 2021
   * @brief
   */
-#include "socket.h"
+#include "../includes/socket.h"
 
 /* ---- Defines ---- */
 
@@ -14,7 +14,7 @@
 
 
 /* ---- Private Methods ---- */
-
+HttpPetition * httpPetition_ini(char * method, char * path, int petitionLength, int minorVersion, int methodLength, int path_len, int num_headers, struct phr_header * headers, char * objectType, int path_List_size, char ** pathList, int body_list_size, char ** bodyList);
 /**
   * @brief Inicializa la estructura de datos HttpPetition
   *
@@ -24,8 +24,8 @@
   *
   * @return puntero a estructura inicializada, NULL en caso de error
   */
-HttpPetition *httpPetition_ini(char * method, char * path, int petitionLength, int minorVersion, int methodLength, int path_len, int num_headers, struct phr_headers * headers, char * objectType,int path_List_size, char * pathList, int body_list_size, char * bodyList)
-{
+HttpPetition * httpPetition_ini(char * method, char * path, int petitionLength, int minorVersion, int methodLength, int path_len, int num_headers, struct phr_header * headers, char * objectType, int path_List_size, char ** pathList, int body_list_size, char ** bodyList){
+
 
   HttpPetition *parser = NULL;
 
@@ -46,96 +46,34 @@ HttpPetition *httpPetition_ini(char * method, char * path, int petitionLength, i
   }
 
   /* Inicializa los atributos de la ED. CdE sobre strcpy */
-  if (strcpy(parser->method, method) == NULL)
-  { /* Metodo http */
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
-  if (strcpy(parser->path, path) == NULL)
-  { /* URN de la peticion */
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
-  if (parser->minorVetsion = minorVersion == NULL)
-  { /* Version http */
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
-  if (parser->methodLength = methodLength == NULL)
-  {
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
-  if (parser->path_len = path_len == NULL)
-  {
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
-  if (parser->num_headers = num_headers == NULL)
-  {
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
+  strcpy(parser->method, method);
 
-  if (parser->headers = headers == NULL)
-  {
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
+  strcpy(parser->path, path);
 
-  if (strcpy(parser->objectType,objectType) == NULL)
-  {
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
+  parser->minorVetsion = minorVersion;
 
-    if (parser->path_list_size = path_List_size == NULL)
-  {
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
+  parser->methodLength = methodLength;
 
-    if (parser->body_list_size = body_list_size == NULL)
-  {
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
+  parser->path_len = path_len ;
 
-    if (parser->pathList = pathList == NULL)
-  {
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
+  parser->num_headers = num_headers;
 
-    if (parser->bodyList = bodyList == NULL)
-  {
-    if (DEBUG_MODE == TRUE)
-      fprintf(stderr, MEM_ERROR, __func__);
-    free(parser);
-    return NULL;
-  }
+
+  parser->headers = headers;
+
+
+  strcpy(parser->objectType,objectType);
+
+
+    parser->path_list_size = path_List_size;
+
+    parser->body_list_size = body_list_size;
+
+
+    parser->pathList = pathList;
+
+    parser->bodyList = bodyList;
+
 
 
   return parser;
@@ -162,7 +100,7 @@ int server_ini(socklen_t *addrlen, cfg_t *conf)
   }
 
   Dir.sin_family = AF_INET;
-  Dir.sin_port = cfg_getstr(conf, "listen_port");
+  Dir.sin_port = cfg_getint(conf, "listen_port");
   Dir.sin_addr.s_addr = htonl(INADDR_ANY);
   bzero((void *)&(Dir.sin_zero), 8);
 
@@ -172,8 +110,8 @@ int server_ini(socklen_t *addrlen, cfg_t *conf)
   {
     exit(EXIT_FAILURE);
   }
-
-  if (listen(sockvalue, NULL) < 0)
+  // REVISAR NUMERO DE CONEX PARALELAS
+  if (listen(sockvalue, 10) < 0)
   {
     exit(EXIT_FAILURE);
   }
@@ -189,9 +127,6 @@ int server_ini(socklen_t *addrlen, cfg_t *conf)
  **/
 void process_request(int connfd, cfg_t *conf)
 {
-
-  char *buffer[MAX_BUFF];
-  int read_control, resultado;
   const int iguales = 0;
   char *server_name;
   char *server_root;
@@ -227,20 +162,6 @@ void process_request(int connfd, cfg_t *conf)
   }
 
   freeParser(parser);
-  //  /* En caso de error, enviar mensaje al cliente */
-  //if (resultado==301) { /* Moved Permanently */
-  //	/* Enviar mensaje */
-  //	/* Liberar memoria */
-  //} else if (resultado==400) { /* Bad Request */
-  //	/* Enviar mensaje */
-  //	/* Liberar memoria */
-  //} else if (resultado==404) { /* Not Found */
-  //	/* Enviar mensaje */
-  //	/* Liberar memoria */
-  //} else if (resultado==505) { /* HTTP Version Not Supported */
-  //	/* Enviar mensaje */
-  //	/* Liberar memoria */
-  //}
 }
 /**
   * @brief Parsea una cadena de texto para ser procesada por el servidor.
@@ -254,7 +175,14 @@ HttpPetition *httpPetition_parser(int socket)
 {
 
   HttpPetition *parser = NULL;
-  char buf[4096], *method, *path;
+  char buf[4096];
+  const char * method;
+  const char * path;
+
+  char * modifPath;
+  char * modifMethod;
+
+
   int pret, minor_version;
   struct phr_header headers[100];
   size_t buflen = 0, prevbuflen = 0, method_len, path_len, num_headers;
@@ -280,23 +208,21 @@ HttpPetition *httpPetition_parser(int socket)
     num_headers = sizeof(headers) / sizeof(headers[0]);
     pret = phr_parse_request(buf, buflen, &method, &method_len, &path, &path_len,
                              &minor_version, headers, &num_headers, prevbuflen);
-    if (pret > 0)
-      break; /* successfully parsed the request */
-    else if (pret == -1)
-      return NULL;
-    /* request is incomplete, continue the loop */
-    assert(pret == -2);
-    if (buflen == sizeof(buf))
-      return NULL;
+
+
+  modifPath = path;
+  modifMethod = method;
+
+
   
-  const char *dot = strrchr(path, '.');
+  char *dot = strrchr(modifPath, '.');
   objectType = dot + 1;
 
 
   /* Obtener argumentos del path*/
-  dot = strtok_r(path,"?", &path);
+  dot = strtok_r(modifPath,"?", &modifPath);
 
- while(piece = strtok_r(dot, "&",&dot) != NULL){
+ while((piece = strtok_r(dot, "&",&dot)) != NULL){
     dot = strtok_r(dot, "&", &dot);
     strtok_r(piece, "=", &piece);
     pathList[i] = strtok_r(piece,"=", &piece);
@@ -308,7 +234,7 @@ HttpPetition *httpPetition_parser(int socket)
   /* Obtener argumentos del cuerpo*/
   body = buf + pret;
   
-  while(piece = strtok_r(body, "&", &body) != NULL){
+  while((piece = strtok_r(body, "&", &body)) != NULL){
     body = strtok_r(body, "&", &body);
     strtok_r(piece, "=", &piece);
     bodyList[i] = strtok_r(piece,"=",&piece);
@@ -316,10 +242,20 @@ HttpPetition *httpPetition_parser(int socket)
   }
   body_list_size = i;
 
-  /* Ahora insertamos todos los elementos en nuestra estructura HttpPetition*/
-  parser = httpPetition_ini(method, path, pret, minor_version, method_len, path_len, num_headers, headers, objectType, path_list_size, pathList, body_list_size, bodyList);
+    /* Ahora insertamos todos los elementos en nuestra estructura HttpPetition*/
+    parser = httpPetition_ini(modifMethod, modifPath, pret, minor_version, method_len, path_len, num_headers, headers, objectType, path_list_size, pathList, body_list_size, bodyList);
+
+    if (pret > 0)
+      break; /* successfully parsed the request */
+    else if (pret == -1)
+      return NULL;
+    /* request is incomplete, continue the loop */
+    assert(pret == -2);
+    if (buflen == sizeof(buf))
+      return NULL;
   
   }
+return parser;
 }
 
 
@@ -334,4 +270,4 @@ void freeParser(HttpPetition * parser){
 }
 
 
-} // Acordarse de libera : cfg, server_root y server_signature
+ // Acordarse de libera : cfg, server_root y server_signature

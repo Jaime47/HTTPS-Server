@@ -14,11 +14,11 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <syslog.h>
-#include "socket.h"
-#include <conf.h>
+#include <string.h>
 
-
-
+#include "../includes/socket.h"
+#include "../includes/conf.h"
+#include "../includes/my_lock.h"
 
 /**
  * @brief La funcion se encarga de definir el comportamiento de cada proceso hijo de modo que reciba conexiones desde su socket asignado
@@ -31,18 +31,22 @@
  * @return
  */
 void child_main(int i, int listenfd, int addrlen, cfg_t * conf){
-    int clilen, connfd;
-    
+    int connfd;
+
+    //int clilen;
+
     while(1){
-            clilen = addrlen;
+            //clilen = addrlen;
             my_lock_wait();
             connfd = accept(listenfd,NULL ,NULL);
             my_lock_release();
 
             process_request(connfd, conf);
+            printf("Accepted Conection");
             close(connfd);
-            
     }
+
+    
 }
 
 /**
@@ -51,7 +55,7 @@ void child_main(int i, int listenfd, int addrlen, cfg_t * conf){
  * 
  * 
  */
-int main(int argc, char *argv)
+int main()
 {
 
 int listenfd, i, childpid;
@@ -61,12 +65,12 @@ int nchildren;
 
 conf = conf_parser();
 
-nchildren = cfg_getint(conf, "nchildren");
+nchildren = cfg_getint(conf, "max_clients");
 
 //listenfd = server_ini(argv[1], argv[2], &addrlen);
 listenfd = server_ini(&addrlen, conf);
 
-my_lock_init(NULL);
+my_lock_init();
 
 for(i = 0; i < nchildren; i++)
     {

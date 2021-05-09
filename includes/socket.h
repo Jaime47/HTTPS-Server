@@ -26,32 +26,11 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <syslog.h>
-#include <conf.h>
-#include "picohttpparser.h"
-
-
-
-
-/* ---- ED Peticion Http ---- */
-typedef struct _HttpPetition {
-  char * method;
-  char * path;
-  int petitionLength;
-  int minorVetsion;
-  int methodLength;
-  int path_len;
-  int num_headers;
-  struct phr_header * headers;
-  char * objectType;
-  char * pathList;
-  char * bodyList;
-  int path_list_size;
-  int body_list_size;
-} HttpPetition;
-
-
-
-
+#include <assert.h>
+#include "../includes/conf.h"
+#include "../includes/picohttpparser.h"
+#include "../includes/verbs.h"
+#include "../includes/http.h"
 
 
 
@@ -94,6 +73,7 @@ void process_request(int connfd, cfg_t * conf);
  **/
 
 cfg_t * conf_parser();
+
 void freeParser(HttpPetition * parser);
-HttpPetition * httpPetition_ini(char * method, char * path, int petitionLength, int minorVersion, int methodLength, int path_len, int num_headers, struct phr_headers * headers, char * objectType, int path_List_size, char * pathList, int body_list_size, char * bodylist);
+
 #endif

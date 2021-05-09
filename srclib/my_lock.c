@@ -1,17 +1,17 @@
 
-#include "my_lock.h"
+#include "../includes/my_lock.h"
 
 static pthread_mutex_t	*mptr;
 
 
-void my_lock_init(char *pathname)
+void my_lock_init()
 {
 	int	fd;
 	pthread_mutexattr_t	mattr;
 
 	fd = open("/dev/zero", O_RDWR, 0);
 
-	mptr = Mmap(0, sizeof(pthread_mutex_t), PROT_READ | PROT_WRITE,
+	mptr = mmap(0, sizeof(pthread_mutex_t), PROT_READ | PROT_WRITE,
 				MAP_SHARED, fd, 0);
 	close(fd);
 
