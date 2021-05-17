@@ -1,11 +1,8 @@
 
 CC=gcc
 
-# Opciones de compilacion
-CFLAGS= -Wall -Wextra -g
+CFLAGS= -Wall -g
 
-# Opciones de enlazado
-# Directorios de los ficheros
 
 $(shell mkdir -p obj bin lib)
 
@@ -13,25 +10,15 @@ SRCPATH = ./src/
 SRCLIBPATH = ./srclib/
 INCPATH = ./includes/
 OBJPATH = ./obj/
-EJCPATH = ./bin/
-LIBRARYPATH = ./lib/
+LIBPATH = ./lib/
 
-# Ejecutables
 EJS = server
-OBJECTSserver =  server.o conf.o picohttpparser.o my_lock.o socket.o verbs.o libsocket libpicoparse libverbs
-
-#============================================================
-# Generacion de ejecutables
-#============================================================
+OBJECTS =  server.o conf.o picohttpparser.o my_lock.o socket.o verbs.o libsocket libpicoparse libverbs
 
 all: $(EJS)
 
-server: $(OBJECTSserver) 
-	$(CC) $(CFLAGS) -o $(EJCPATH)server $(OBJPATH)server.o $(OBJPATH)conf.o $(OBJPATH)picohttpparser.o $(OBJPATH)my_lock.o $(OBJPATH)socket.o $(OBJPATH)verbs.o -lconfuse -lpthread
-
-#=============================================================
-# Generación de archivos .o
-#=============================================================
+server: $(OBJECTS) 
+	$(CC) $(CFLAGS) -o $(SRCPATH)server $(OBJPATH)server.o $(OBJPATH)conf.o $(OBJPATH)picohttpparser.o $(OBJPATH)my_lock.o $(OBJPATH)socket.o $(OBJPATH)verbs.o -lconfuse -lpthread
 
 server.o: $(SRCPATH)server.c $(INCPATH)conf.h $(INCPATH)my_lock.h $(INCPATH)socket.h $(INCPATH)verbs.h
 	$(CC) $(CFLAGS) -c $(SRCPATH)server.c -o $(OBJPATH)server.o
@@ -52,14 +39,18 @@ verbs.o: $(SRCLIBPATH)verbs.c $(INCPATH)verbs.h
 	$(CC) $(CFLAGS) -c $(SRCLIBPATH)verbs.c -o $(OBJPATH)verbs.o
 
 libsocket: $(OBJPATH)socket.o
-	ar cr $(LIBRARYPATH)libsocket.a $(OBJPATH)socket.o
+	ar cr $(LIBPATH)libsocket.a $(OBJPATH)socket.o
 
 libverbs: $(OBJPATH)verbs.o
-	ar cr $(LIBRARYPATH)libverbs.a $(OBJPATH)verbs.o
+	ar cr $(LIBPATH)libverbs.a $(OBJPATH)verbs.o
 
 libpicoparse: $(OBJPATH)picohttpparser.o
-	ar cr $(LIBRARYPATH)libpicoparse.a $(OBJPATH)picohttpparser.o
+	ar cr $(LIBPATH)libpicoparse.a $(OBJPATH)picohttpparser.o
 
 clean:
-	rm -rf $(EJCPATH)server $(OBJPATH)*.o $(STATICPATH)*.a
+	rm -rf $(SRCPATH)server $(OBJPATH)*.o $(LIBPATH)*.a
 	rm -r obj bin lib
+
+run:
+	$(SRCPATH)server
+
