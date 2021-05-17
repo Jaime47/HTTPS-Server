@@ -1,13 +1,12 @@
 
 #include "../includes/my_lock.h"
 
-static pthread_mutex_t	*mptr;
-
+static pthread_mutex_t *mptr;
 
 void my_lock_init()
 {
-	int	fd;
-	pthread_mutexattr_t	mattr;
+	int fd;
+	pthread_mutexattr_t mattr;
 
 	fd = open("/dev/zero", O_RDWR, 0);
 

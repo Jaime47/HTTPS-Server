@@ -5,11 +5,18 @@
   * @date 11 Mar 2021
   * @brief
   */
+
+/* --- Includes --- */
 #include "../includes/verbs.h"
 
 
-
-char * fileTypeSwitch(HttpPetition * parser);
+/**
+ * @brief Funcion que define el tipo de archivo a partir de la extension
+ * @param parser Parser de peticion
+ * @return Puntero a char conteniendo el tipo de archivo p.e "text/plain"
+ * 
+ */
+char *fileTypeSwitch(HttpPetition *parser);
 
 /**
  * @brief La funcion devuelve la cabezera asociada a un elemento HTTP
@@ -21,39 +28,31 @@ char * fileTypeSwitch(HttpPetition * parser);
  * 
  * @return Cadena de caracteres con la cabecera.
  */
-char * HEAD (HttpPetition * parser,char*server_name, char* server_root, int socket){
-    char  * url;
-    char timechar[50];
-    time_t t;
-    char * aux = NULL;
-    t = time(NULL);
-    struct tm tm = *localtime(&t);
-    char * response = NULL;
-    
-    url = strcat(server_root,parser->path);
+char *HEAD(HttpPetition *parser, char *server_name, char *server_root, off_t file_size)
+{
+    char url[300];
+    char *response;
+    char lmodified[100];
+    char requestDate[100];
+    time_t tim = time(0);
+
+    response = (char *)calloc(500, 1);
+    struct stat attrib;
+    sprintf(url, "%s%s", server_root, parser->path);
+    stat(url, &attrib);
 
     //Last-Modified
-    struct stat attrib;
-    stat(url, &attrib);
-    strftime(timechar, 50, "%Y-%m-%d %H:%M:%S\n", localtime(&attrib.st_mtime));
-    sprintf(response,"Last-Modified: %s", timechar);
+    strftime(lmodified, 100, "%a, %d %b %Y %H:%M:%S %Z", gmtime(&attrib.st_mtime));
     // Date
-    sprintf(aux,"Date: %d-%02d-%02d %02d:%02d:%02d\n",tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
-    strcat(response, aux);
-    // Content-type
-    sprintf(aux,"File-Type: %s\n",fileTypeSwitch(parser));
-    strcat(response, aux);
-    //Server name
-    sprintf(aux, "Server: %s", server_name);
-    strcat(response, aux);
-    //Content length
-    sprintf(aux, "File-length: %ld", attrib.st_size);
-    strcat(response,aux);
+    /*Obtenemos la fecha de la request*/
+    struct tm *getTime = gmtime(&tim);
+    strftime(requestDate, 100, "%a, %d %b %Y %H:%M:%S %Z", getTime);
+    /*Standard header for GET/POST files*/
+    sprintf(response, "HTTP/1.%d 200 OK\r\nDate: %s\r\nServer: %s\r\nContent-Length: %ld\r\nLast-Modified: %s\r\nContent-Type: %s\r\n\r\n",
+            parser->minorVersion, requestDate, server_name, file_size, lmodified, fileTypeSwitch(parser));
 
     return response;
-
-    }
-
+}
 
 /**
  * @brief La funcion devuelve la cabezera de un fichero HTTP más las opciones de verbos aplicables al mismo en el servidor y la manda a traves del socket
@@ -65,28 +64,22 @@ char * HEAD (HttpPetition * parser,char*server_name, char* server_root, int sock
  * 
  * @return 
  */
-void OPTIONS(HttpPetition * parser, char *server_name, char * server_root, int socket){
+void OPTIONS(HttpPetition *parser, char *server_name, char *server_root, int socket)
+{
 
-    char * url;
-    char * response;
-    char * head;
-
-    url = strcat(server_root,parser->path);
-
-    // HTTP version and code
-    if (access(url, F_OK ) != -1){
-        response = "HTTP/1.1 200 OK\n";
-    }
-    else{
-        response = "HTTP/1.1 404 NOT FOUND\n";
-    }
-    //Allow
-    strcat(response,"Allow: GET, POST, OPTIONS\n");
-    head = HEAD(parser, server_name, server_root,socket);
-    strcat(response, head);
+    char response[500];
+    char requestDate[100];
+    time_t tim = time(0);
+    struct tm *getTime = gmtime(&tim);
+    /*Obtenemos la fecha de la request*/
+    strftime(requestDate, 100, "%a, %d %b %Y %H:%M:%S %Z", getTime);
+    //url = strcat(server_root,parser->path);
+    /* Ahora nos toca montar la respuesta de Options*/
+    sprintf(response, "HTTP/1.%d 200 OK\r\nDate: %s\r\nServer: %s\r\nContent-Length: 0\r\nAllow: GET, POST, OPTIONS\r\n", parser->minorVersion, requestDate, server_name);
     //Sending response
-
-    write(socket, response, sizeof(response));
+    write(socket, response, strlen(response));
+    /*Resetear el buffer de respuesta para las siguientes peticiones*/
+    memset(response, 0, strlen(response));
     return;
 }
 /**
@@ -99,46 +92,97 @@ void OPTIONS(HttpPetition * parser, char *server_name, char * server_root, int s
  * 
  * @return 
  */
-void GET(HttpPetition * parser,char *server_name, char * server_root, int socket){
+void GET(HttpPetition *parser, char *server_name, char *server_root, int socket)
+{
+    char imputScript[400];
+    char *head;
+    char url[200];
+    FILE *outputScript;
+    FILE *file;
+    int fileLinuxDescriptor;
+    char *buffer = NULL;
+    int size;
+    int i = 1;
+    snprintf(url, 200, "%s%s", server_root, parser->path);
 
-    char * url;
-    char * response;
-    char * head;
-    char * body;
-    
-    url = strcat(server_root,parser->path);
-    char * ot = fileTypeSwitch(parser);
+    /** Si get tiene argumentos deberia ser un script asi que en ese caso comprobamos el parser*/
+    if (parser->path_list_size != 0)
+    {
+        if (strstr(parser->objectType, "py"))
+        {
+            sprintf(imputScript, "python3 %s %s", url, parser->pathList);
+        }
 
-    // HTTP version and code
-    if (access(url, F_OK ) != -1){
-        response = "HTTP/1.1 200 OK\n";
+        else if (strstr(parser->objectType, "php"))
+        {
+            sprintf(imputScript, "php %s \"%s\"", url, parser->pathList);
+        }
+
+        /** Como metodo para obtener el script lo almacenamos en un archivo con descriptor generado automaticamente*/
+        outputScript = popen(imputScript, "r");
+        if (outputScript == NULL)
+        {
+            syslog(LOG_INFO, "ERROR: Script exec\n");
+            error404(socket, parser, server_name);
+            close(socket);
+        }
+
+        /**Toca mandar una request a head para que nos de la cabecera, para ello leemos el file_size*/
+        fileLinuxDescriptor = fileno(outputScript);
+        sleep(3);
+
+        do
+        {
+            buffer = realloc(buffer, 2000 * i);
+            memset(buffer, 0, 2000);
+            size = read(fileLinuxDescriptor, buffer, 2000);
+            i++;
+        } while (size == 2000);
+
+        head = HEAD(parser, server_name, server_root, size);
+
+        /**Mensaje ensamblado*/
+        write(socket, head, strlen(head));
+        write(socket, buffer, size);
+
+        pclose(outputScript);
     }
-    else{
-        response = "HTTP/1.1 404 NOT FOUND\n";
+
+    /**If there are no arguments in path we may suppose we have normal get request*/
+    else
+    {
+        file = fopen(url, "r");
+        /**Checkeos principales*/
+        if (!file)
+        {
+            error404(socket, parser, server_name);
+            //close(socket);
+            return;
+        }
+
+        char *ext;
+        ext = fileTypeSwitch(parser);
+        if (strcmp(ext, "ERROR") == 0)
+        {
+            syslog(LOG_INFO, "ERROR: Tipo de archivo sin soporte o ");
+            close(socket);
+            return;
+        }
+
+        /**Ensamblamos la respuesta*/
+        struct stat s;
+        stat(url, &s);
+        /*Cabecera*/
+        head = HEAD(parser, server_name, server_root, s.st_size);
+        write(socket, head, strlen(head));
+        /**Mensaje ensamblado*/
+        fileLinuxDescriptor = fileno(file);
+
+        sendfile(socket, fileLinuxDescriptor, 0, s.st_size);
+        fclose(file);
     }
 
-    //HEAD
-    head = HEAD(parser, server_name, server_root,socket);
-
-    strcat(response, head);
-
-    strcat(response, "<html><body><h1>");
-
-    if(strcmp(ot, "py") == 0 ||strcmp(ot, "py") == 0){
-    //BODY OBTENTION
-    body = scriptInterpreter(parser);
-    }
-    else{
-    //BODY OBTENTION
-    body = readFile(url);
-    }
-
-
-    strcat(response, body);
-    strcat(response, "</h1,/body,/html>");
-    write(socket, response, sizeof(response));
-    free(body);
-    
+    free(head);
     return;
 }
 /**
@@ -152,190 +196,190 @@ void GET(HttpPetition * parser,char *server_name, char * server_root, int socket
  * 
  * @return 
  */
-void POST(HttpPetition * parser,char *server_name, char * server_root, int socket){
+void POST(HttpPetition *parser, char *server_name, char *server_root, int socket)
+{
 
-    char * url;
-    char * response;
-    char * head;
-    char * body;
-    
-    url = strcat(server_root, parser->path);
-    //url = strcat(url, parser->headers[0].value); DONDE INTRODUCES LAS VARIABLES DEL CUERPO
+    char url[200];
+    char imputScript[600];
+    FILE *outputScript;
+    char *head;
+    int fileLinuxDescriptor;
+    char *buffer;
+    int size;
+    int i = 1;
+    sprintf(url, "%s%s", server_root, parser->path);
 
-    char * ot = fileTypeSwitch(parser);
-
-        // HTTP version and code
-    if (access(url, F_OK ) != -1){
-        response = "HTTP/1.1 200 OK\n";
-    }
-    else{
-        response = "HTTP/1.1 404 NOT FOUND\n";
-    }
-
-    //HEAD
-    head = HEAD(parser, server_name, server_root,socket);
-
-    strcat(response, head);
-
-    strcat(response, "<html><body><h1>");
-
-    if(strcmp(ot, "py") == 0 ||strcmp(ot, "py") == 0){
-    //BODY OBTENTION
-    body = scriptInterpreter(parser);
-    }
-    else{
-    //BODY OBTENTION
-    body = readFile(url);
-    }
-
-
-    strcat(response, body);
-    strcat(response, "</h1,/body,/html>");
-    write(socket, response, sizeof(response));
-    free(body);
-    return;
-
-    
-
-
-}
-
-/**
- * @brief La funcion recibe una localización local del archivo a nivel local, lo abre y lo lee devolviendolo como puntero a char.
- * 
- * @param location Localizacion del archivo a nivel local
- * @return Archivo leido
- */
-char * readFile(char * location){
-
-    struct stat attrib;
-    stat(location, &attrib);
-    int i;
-    int length;
-    char * buffer;
-    length = attrib.st_size;
-    FILE *file = fopen(location, "r");
-
-    buffer = malloc(sizeof(length));
-
-
-    if (file == NULL)
-    return NULL; //could not open file
-
-
-    while(i=fread(buffer,1,length,file), length >0 && i != 0 ){
-       if(i == -1){
-           free(buffer);
-        //   free(attrib);
-           return NULL;
-       }
-       buffer += i;
-       length -= i;
-   }
-
-    return buffer;
-}
-
-
-/**
- * @brief La funcion interpreta scripts .py y .php, los ejecuta por terminal y lee su salida estandar.
- * 
- * @param parser Parseo de la peticion http asociada
- * 
- * @return Cadena de caracteres de la estandar output del servidor.
- */
-char * scriptInterpreter(HttpPetition * parser){
-    char * command;
-    char reader[1024];
-    char * output;
-    int i = 0;
-    char * ot;
-    ot = fileTypeSwitch(parser);
-
-    
-    if(strcmp(ot, "py") == 0){
-
-        command = "python3 ";
-        strcat(command, parser->path);
-        system(command);
-
-    }
-
-    else if(strcmp(ot, "php") == 0){
-
-        command = "php ";
-        strcat(command, parser->path);
-        system(command);
-
-    }
-
-    FILE *fp = popen(command, "r");
-    if (!fp)
+    if (parser->path_list_size == 0)
     {
-        return NULL;
-    }
-
-    output = malloc(sizeof(reader) * LINEARRAYSIZE);
-    
-    while (strcmp(fgets(reader, sizeof(reader), fp), "\r\n") != 0)
-    {
-        strcat(output, reader);
-        if (i >= LINEARRAYSIZE){
-            output = realloc(output, 1024 * (LINEARRAYSIZE+i));
+        if (strstr(parser->objectType, "py"))
+        {
+            sprintf(imputScript, "echo %s | python3 %s", parser->bodyList, url);
         }
-        i++;
+        else
+        {
+            sprintf(imputScript, "echo %s | php %s", parser->bodyList, url);
+        }
+
+        /** Como metodo para obtener el script lo almacenamos en un archivo con descriptor generado automaticamente*/
+        outputScript = popen(imputScript, "r");
+        if (outputScript == NULL)
+        {
+            syslog(LOG_INFO, "ERROR: Script exec\n");
+            error404(socket, parser, server_name);
+            close(socket);
+        }
+
+        /**Toca mandar una request a head para que nos de la cabecera, para ello leemos el file_size*/
+        fileLinuxDescriptor = fileno(outputScript);
+
+        sleep(3);
+
+        do
+        {
+            buffer = realloc(buffer, 2000 * i);
+            size = read(fileLinuxDescriptor, buffer, 2000);
+            i++;
+        } while (size == 2000);
+
+        head = HEAD(parser, server_name, server_root, size);
+
+        /**Mensaje ensamblado*/
+        write(socket, head, strlen(head));
+        write(socket, buffer, size);
+
+        pclose(outputScript);
+        free(buffer);
     }
+    else
+    {
+        if (strstr(parser->objectType, "py"))
+        {
+            sprintf(imputScript, "echo %s | python3 %s %s", parser->bodyList, url, parser->pathList);
+        }
+        else
+        {
+            sprintf(imputScript, "echo %s | php %s %s", parser->bodyList, url, parser->pathList);
+        }
 
-    return output;
+        /** Como metodo para obtener el script lo almacenamos en un archivo con descriptor generado automaticamente*/
+        outputScript = popen(imputScript, "r");
+        if (outputScript == NULL)
+        {
+            syslog(LOG_INFO, "ERROR: Script exec\n");
+            error404(socket, parser, server_name);
+            close(socket);
+        }
 
+        /**Toca mandar una request a head para que nos de la cabecera, para ello leemos el file_size*/
+        fileLinuxDescriptor = fileno(outputScript);
+        sleep(3);
+        do
+        {
+            buffer = realloc(buffer, 2000 * i);
+            size = read(fileLinuxDescriptor, buffer, 2000);
+            i++;
+        } while (size == 2000);
 
+        head = HEAD(parser, server_name, server_root, size);
+
+        /**Mensaje ensamblado*/
+        write(socket, head, strlen(head));
+        write(socket, buffer, size);
+
+        pclose(outputScript);
+        free(buffer);
+    }
+    free(head);
+
+    return;
 }
 
+char *fileTypeSwitch(HttpPetition *parser)
+{
 
+    char *ext = parser->objectType;
 
-char * fileTypeSwitch(HttpPetition * parser){
-
-    char * ext = parser->objectType;
-
-    if (strcmp(ext, "txt") == 0) 
+    if (strcmp(ext, "txt") == 0)
     {
         return "text/plain";
-    } 
-else if (strcmp(ext, "htm") == 0)
+    }
+    else if (strcmp(ext, "html") == 0)
     {
         return "text/html";
     }
-else if (strcmp(ext, "gif") == 0)
+    else if (strcmp(ext, "gif") == 0)
     {
         return "image/gif";
     }
-else if (strcmp(ext, "jpg") == 0 || strcmp(ext, "jpe") == 0) 
+    else if (strcmp(ext, "jpg") == 0 || strcmp(ext, "jpeg") == 0)
     {
         return "image/jpeg";
     }
-else if (strcmp(ext, "mpe") == 0 || strcmp(ext, "mpg") == 0) 
+    else if (strcmp(ext, "mpeg") == 0 || strcmp(ext, "mpg") == 0)
     {
         return "video/mpeg";
     }
-else if (strcmp(ext, "doc") == 0)
+    else if (strcmp(ext, "doc") == 0)
     {
         return "application/msword";
     }
-else if (strcmp(ext, "pdf") == 0)
+    else if (strcmp(ext, "pdf") == 0)
     {
         return "application/pdf";
     }
-else if (strcmp(ext, ".py") == 0)
-{
-        return "py";
-}
-else if (strcmp(ext, "php") == 0)
+    else if (strcmp(ext, "py") == 0)
     {
-        return "php";
+        return "text/plain";
     }
-else 
+    else if (strcmp(ext, "php") == 0)
+    {
+        return "text/plain";
+    }
+    else
     {
         return "ERROR";
     }
+}
 
+void error400(int socket, char *server_name)
+{
+    char requestDate[100];
+    char response[500];
+    time_t tim = time(0);
+    struct tm *getTime = gmtime(&tim);
+    /*Obtenemos la fecha de la request*/
+    strftime(requestDate, 100, "%a, %d %b %Y %H:%M:%S %Z", getTime);
+
+    sprintf(response, "HTTP/1.1 400 Bad Request\r\nDate: %s\r\nServer: %s\r\nContent-Length: 0\r\nContent-Type: text/plain\r\n\r\n", requestDate, server_name);
+    write(socket, response, strlen(response));
+    memset(response, 0, strlen(response));
+}
+
+void error404(int socket, HttpPetition *parser, char *server_name)
+{
+    char requestDate[100];
+    char response[500];
+    time_t tim = time(0);
+    struct tm *getTime = gmtime(&tim);
+    /*Obtenemos la fecha de la request*/
+    strftime(requestDate, 100, "%a, %d %b %Y %H:%M:%S %Z", getTime);
+
+    sprintf(response, "HTTP/1.%d 404 Not Found\r\nDate: %s\r\nServer: %s\r\nContent-Length: 0\r\nContent-Type: text/plain\r\n\r\n",
+            parser->minorVersion, requestDate, server_name);
+    write(socket, response, strlen(response));
+    memset(response, 0, strlen(response));
+}
+
+void error500(int socket, char *server_name)
+{
+    char requestDate[100];
+    char response[500];
+    time_t tim = time(0);
+    struct tm *getTime = gmtime(&tim);
+    /*Obtenemos la fecha de la request*/
+    strftime(requestDate, 100, "%a, %d %b %Y %H:%M:%S %Z", getTime);
+
+    sprintf(response, "HTTP/1.1 500 Internal Error\r\nDate: %s\r\nServer: %s\r\nContent-Length: 0\r\nContent-Type: text/plain\r\n\r\n", requestDate, server_name);
+    write(socket, response, strlen(response));
+    memset(response, 0, strlen(response));
 }
