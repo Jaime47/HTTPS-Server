@@ -43,6 +43,7 @@ int server_ini(cfg_t *conf)
     syslog(LOG_INFO, "Socket error");
     exit(EXIT_FAILURE);
   }
+  setsockopt(sockvalue, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
   printf("Este es el listen port %ld\n", cfg_getint(conf, "listen_port"));
   bzero(&(Dir), sizeof(Dir));
   Dir.sin_family = AF_INET;

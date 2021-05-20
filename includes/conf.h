@@ -1,17 +1,16 @@
 /**
   * @author Jaime Pons Garrido
   * @author Federico Perez Fernandez
-  * @file verbs.c
+  * @file conf.h
   * @date 11 Mar 2021
   * @brief
   */
 
-#include <confuse.h>
 #ifndef conf_h
-
-
+/* --- Includes --- */
+#include <syslog.h>
+#include <confuse.h>
 #define conf_h
-
 
 /**
  * @brief conf_parser : Lee el archivo de configuracion y parsea sus elementos clave-valor
@@ -20,6 +19,5 @@
  **/
 
 cfg_t *conf_parser();
-
 
 #endif

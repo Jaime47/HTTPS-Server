@@ -135,9 +135,9 @@ void GET(HttpPetition *parser, char *server_name, char *server_root, int socket)
         {
             buffer = realloc(buffer, 2000 * i);
             memset(buffer, 0, 2000);
-            size = read(fileLinuxDescriptor, buffer, 2000);
+            size += read(fileLinuxDescriptor, buffer, 2000);
             i++;
-        } while (size == 2000);
+        } while (size == 2000*(i-1));
 
         head = HEAD(parser, server_name, server_root, size);
 
@@ -237,9 +237,9 @@ void POST(HttpPetition *parser, char *server_name, char *server_root, int socket
         do
         {
             buffer = realloc(buffer, 2000 * i);
-            size = read(fileLinuxDescriptor, buffer, 2000);
+            size += read(fileLinuxDescriptor, buffer, 2000);
             i++;
-        } while (size == 2000);
+        } while (size == 2000 *(i-1));
 
         head = HEAD(parser, server_name, server_root, size);
 
@@ -276,9 +276,9 @@ void POST(HttpPetition *parser, char *server_name, char *server_root, int socket
         do
         {
             buffer = realloc(buffer, 2000 * i);
-            size = read(fileLinuxDescriptor, buffer, 2000);
+            size += read(fileLinuxDescriptor, buffer, 2000);
             i++;
-        } while (size == 2000);
+        } while (size == 2000*(i-1));
 
         head = HEAD(parser, server_name, server_root, size);
 

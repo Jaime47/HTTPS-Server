@@ -5,6 +5,7 @@
   * @date 11 Mar 2021
   * @brief
   */
+/* --- Defines --- */
 #ifndef _my_lock
 #include <unistd.h>
 #include <sys/mman.h>

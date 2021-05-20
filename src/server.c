@@ -15,38 +15,54 @@
 #include <unistd.h>
 #include <syslog.h>
 #include <string.h>
-
+#include <signal.h>
 #include "../includes/socket.h"
 #include "../includes/conf.h"
 #include "../includes/my_lock.h"
+volatile sig_atomic_t END_FLAG = 1;
 
 /**
- * @brief La funcion se encarga de definir el comportamiento de cada proceso hijo de modo que reciba conexiones desde su socket asignado
+ * @brief Signal function that sets to zero global flag when (Ctrl+C)
+ * @param int Not used
  * 
- * @param i Numero del subproceso hijo
- * @param listenfd Identificador de la conexion
- * @param addrlen Longitud de la address
- * @param conf Archivo de configuracion del server
- * 
- * @return
  */
-void child_main(int i, int listenfd, int addrlen, cfg_t * conf){
-    int connfd;
+void end_server(int sig)
+{               // can be called asynchronously
+  END_FLAG = 0; // set flag
+}
 
-    //int clilen;
+/**
+ * @brief La subrutina principal de cada proceso hijo, todos concurren a un semaforo globar para ir aceptando peticiones y luego las sirven.
+ * @param listenfd Puerto de escucha del servidor necesario para Accept
+ * @param conf Configuracion del server
+ */
+void child_main(int listenfd, cfg_t *conf)
+{
+  int connfd;
+  int P_FLAG = 1;
 
-    while(1){
-            //clilen = addrlen;
-            my_lock_wait();
-            connfd = accept(listenfd,NULL ,NULL);
-            my_lock_release();
+  while (1)
+  {
 
-            process_request(connfd, conf);
-            printf("Accepted Conection");
-            close(connfd);
+    if(END_FLAG == 0){
+      return;
     }
 
-    
+    my_lock_wait();
+    connfd = accept(listenfd, NULL, NULL);
+    setsockopt(connfd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
+    my_lock_release();
+
+    while (P_FLAG != 0)
+    {
+      if (!END_FLAG)
+        break;
+      P_FLAG = process_request(connfd, conf);
+    }
+
+    close(connfd);
+  }
+  return;
 }
 
 /**
@@ -57,31 +73,66 @@ void child_main(int i, int listenfd, int addrlen, cfg_t * conf){
  */
 int main()
 {
+  /*Declaracion de variables*/
+  int listenfd, i = 0;
+  //cfg_t * conf;
+  /*Obtenemos configuracion y numero de procesos hijos*/
+  //conf = conf_parser();
 
-int listenfd, i, childpid;
-socklen_t addrlen;
-cfg_t * conf;
-int nchildren;
+  char *server_root = NULL;
+  char *server_signature = NULL;
+  long int max_clients;
+  long int listen_port;
 
-conf = conf_parser();
+  cfg_t *conf;
 
-nchildren = cfg_getint(conf, "max_clients");
+  cfg_opt_t opts[] = {
+      CFG_SIMPLE_STR("server_root", &server_root),
+      CFG_SIMPLE_INT("max_clients", &max_clients),
+      CFG_SIMPLE_INT("listen_port", &listen_port),
+      CFG_SIMPLE_STR("server_signature", &server_signature),
+      CFG_END()};
+  conf = cfg_init(opts, 0);
+  if (cfg_parse(conf, "server.conf") == CFG_FILE_ERROR)
+  {
+    syslog(LOG_INFO, "File reading error");
+  };
 
-//listenfd = server_ini(argv[1], argv[2], &addrlen);
-listenfd = server_ini(&addrlen, conf);
+  /*Inicializamos el server*/
+  int NCHILDS = cfg_getint(conf, "max_clients");
+  pid_t childpids[NCHILDS];
 
-my_lock_init();
+  listenfd = server_ini(conf);
+  signal(SIGINT, end_server);
 
-for(i = 0; i < nchildren; i++)
+  my_lock_init();
+
+  for (i = 0; i < NCHILDS; i++)
+  {
+    childpids[i] = fork();
+    if (childpids[i] == 0)
     {
-
-        if((childpid = fork()) == 0){
-            child_main(i, listenfd,addrlen,conf);
-        }
-
+      child_main(listenfd, conf);
+      exit(EXIT_SUCCESS);
     }
+  }
+  while (1)
+  {
 
-    while(1){
-        pause();
+    if (!END_FLAG)
+    {
+      sleep(2);
+      close(listenfd);
+      for (i = 0; i < NCHILDS; i++)
+      {
+        
+        kill(childpids[i], SIGTERM);
+      }
+      free(conf);
+      return EXIT_SUCCESS;
     }
+  }
+
+  close(listenfd);
+  return EXIT_SUCCESS;
 }
