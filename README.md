@@ -1,4 +1,4 @@
-# practica1
+
 
 Para ejecutar correctamente la practica 1 se debe de descargar la carpeta de la misma mediante git clone o descarga zip.
 
